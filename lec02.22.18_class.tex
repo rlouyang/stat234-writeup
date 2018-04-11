@@ -1,0 +1,334 @@
+\documentclass[11pt]{article}
+\usepackage{url,amsmath,setspace,amssymb,amsthm,fullpage}
+\usepackage{algorithm,algorithmic}
+
+% Scribe template modified from original created by UC Berkeley's EECS department
+
+\newcommand{\heading}[5]{
+   \renewcommand{\thepage}{#1-\arabic{page}}
+   \noindent
+   \begin{center}
+   \framebox[\textwidth]{
+     \begin{minipage}{0.9\textwidth} \onehalfspacing
+       {\bf STAT 234 -- Sequential Decision Making} \hfill #2
+
+       {\centering \Large #5
+
+       }\medskip
+
+       {\it #3 \hfill #4}
+     \end{minipage}
+   }
+   \end{center}
+}
+
+\newcommand{\scribe}[4]{\heading{#1}{#2}{Instructor:
+Susan Murphy }{Scribe: #4}{Lecture #1: #3}}
+
+\input{macros}
+
+\bibliographystyle{alpha}
+
+\begin{document}
+\scribe{10}{February 22, 2018}{Least Squares Methods in RL}{Michael Ge}
+
+\section{Least Squares Policy Iteration (LSPI)}
+
+\subsection{Review of MDPs}
+
+see slide 4/36
+
+the usual MDP world, but the number of states is quite large. So we have to think about function approximation
+
+$n$ has been small so far.
+ 
+Note that capitals ($R$) are random variables lol, but $r(s, a)$ is the conditional mean given $s, a$. If we knew the distribution of $R$, we could potentially calculate $r(s, a)$.
+
+If we have just one long Markov process it's:
+
+sars
+
+slides 5/36
+speak of the devil
+Policy and value functions.
+
+$\pi$ could also take the values 0 and 1 which would be a deterministic policy.
+
+state-action value function $Q^\pi(s, a)$ for a given policy is the expectation of the future discounted rewards given present state and present action. Could've started at any time, not just $t=0$, since the transition probabilities don't depend on time.
+
+
+
+
+can write these formulas later
+
+just write comments i guess
+
+
+bellman: expectation of future rewards given state and action (doing it on $Q$)
+$\mathcal{T}$ is often the Bellman operator
+
+To derive the bottom formula on 6/36, could do Adam's law (see old notes?)
+
+she uses mathcal P here for probability
+
+note that $\pi$ isn't part of the expectatoin, which is nice (no subscript)
+
+all we have left is next state given present state and action, so there's no pi. The one on the top needed the pi because $A_{t+1}$ depends on $\pi$.
+
+It's amazing that we can maximize all the table entries with one policy, wow.
+
+Deterministic policy in these settings.
+
+\subsection{Policy Evaluation: Least-Square Temporal Difference (LSTD)}
+
+We can fall into a trap if we don't think about estimating functions.
+
+focus on on-policy vs off-policy
+
+On-policy: SARSA, expected sarsa
+
+Off-policy: Q Learning/Omer's method
+
+online: both methods
+
+batch: Q learning
+
+
+LSTD is a batch, off-policy method
+
+9/36 
+training data $\mathcal{D}$ is a transition sample (like what we'll be doing on our final project)
+
+no longer doing stuff with lookup tables
+
+10/36
+
+large MDPs as in large in the number of states (and actions?).
+
+$\phi(s, a) \in \mathbb{R}^p$, $Q^\pi(s, a) \approx Q_w(s, a) = \phi(s, a)^\top w, w \in \mathbb{R}^p$
+
+If your batch of data is small for 50 states, your project will suck...but in general settings, we have massive numbers of states like games. In these settings, it's more computational time. We'd need to simulate enough data to simulate lookup tables
+
+In LSPI, we're always looking at linear approximations. We don't mean $\phi$ is linear, but rather it's linear in the weights $w$. In a sophisticated settings, $\phi$ could be basis functions or other complex features to transform into $\mathbb{R}^d$. We may not have enough data to estimate high-dimensional weight vectors. So keep in mind that the decision boundary is necessary linear.
+
+What we're not doing is automatically forming features -- we have to hand-craft basis functions ourselves. Deep learning does automated feature construction. For example, in speech recognition, the features for a long time were hand-crafted.
+
+if we had $n$ states, $k$ actions, table size is $n \times k$. could one-hot encode and would be equivalent to look-up table LOL for w length n by k
+
+11/36
+Let's approximate the $Q$-matrix with the linear function:
+
+The most natural objective function is $J(w) = \E{(\mathcal{T}^\pi Q_w(S,A) - Q_w(S,A))^2}$ is the expected square loss
+
+find weights $$w^\pi = \argmin_w J(w)$$
+
+act as if there exists a $w^\pi$ such that $Q^\pi(s, a) \approx \phi(s, a)^\top w^\pi$
+
+One table is $Q^\pi$ and the other is $\mathcal{T}^\pi Q^\pi$. We're going to take the two and map to a scalar distance metric. We'll approximate each element in $Q_w$ that minimize the distance.
+
+Certain states and actions might occur frequently in batch dataset, but might not occur in policy $\pi$. We might be overweighting importance of some actions that actually aren't that important.
+
+you give me pi, I want to learn $Q$-function (approximation) for that $\pi$
+
+Not gonna actually learn $Q$-function for that $\pi$, just an approximation of that pi.
+
+\subsubsection{Discount rate $\gamma = 0$}
+12/36
+ 
+The operator is just $r(s,a)$, which is independent of $w$. The objective function is $J(w) = \E{(r(S,A) - \phi(S,A)^\top w)^2} = \E{(R - \phi(S,A)^\top w)^2} + \text{Const.}$. Find $w$ by argmin, and estimate using empirical least squares
+
+We're making up a linear model that describes the reward as a linear combination of features (already no guarantee that a linear combination will be accurate)
+
+If we have a rich set of features, there's no reason to believe linear combination will be accurate.
+
+Const is $R - E(R^2)$ or something, check this math
+
+Target here is clear, it's $R_{i+1}$.
+
+NOTE, IT'S $R_{i + 1}$ GO FIX. DON'T FOLLOW 12/36 SLIDE.
+
+thanks lucas
+
+\subsubsection{When discount rate isn't 0 -- naive approach}
+
+
+13/36
+
+$\gamma > 0$, so we don't have independence between $T^\pi Q$ and $w$.
+
+Naive approach would be to take the min of:
+
+$$w^\pi = \argmin_w \E{(T^\pi Q_w(S,A) - Q_w(S,A))^2)^2}$$
+gotta space between $$\pi$$ and Q fyi
+R i + 1 AGAIN
+
+
+target may be bad depending on the quality of your (sampled?) features
+
+14/36
+
+problem with this approach: look at M-estimation and Z-estimation
+
+
+
+
+$M$-minimize/maximize. Least squares setting is here until we set derivative to 0 then we're in Z
+
+$Z$-setting an equation to zero. When talking about estimating equations we're here.
+
+
+$$\frac{d}{dw}\E{M_n(W)}|_{w=w^\pi} = 0$$
+
+We're trying to minimize.
+
+the expectation of the derivative of $M$ should be 0 at the min/max
+
+INTUITION NOT DETAILS (ignore stuff going to 0)
+
+$M_n(w)$ is not a good proxy for $J(w)$.
+this requirement doesn't even hold for the naive approach
+
+
+
+BOARD TIME:
+
+Take derivative, replace $w$ with $w^\pi$? see whether or not expectation is 0. Simple check on whether or not there's any place we can go.
+
+ok this i vs i + 1 thing: figure out
+\begin{align*}
+\frac{d}{dw}M_n(w) = 2\sum_{i=1}^n\left(R_{i} + \gamma \sum_{a'} \pi(a'|s'_{i})\phi(s_i', a')^\top w - \phi(S_i, A_i)^\top w \right)\underbrace{\left[\gamma \sum_{a'} \pi(a'|S_i')\phi(S_i, a') - \phi(S_i, A_i)\right]}_{\text{$p \times 1$ foro $p$ features}}
+\end{align*}
+
+For $w$, replace with $w^\pi$.
+
+\begin{align*}
+\E{\frac{d}{dw} M_n(w) |_{w=w^\pi}} &=2n \E{[R + \gamma \sum_{a'} \pi(a'|S')\phi(S',a')^\top w_\pi - \phi(S,A)^\top w_\pi][\gamma \sum_{a'} \pi(a'|S')\phi(S',a') - \phi(S,A)]} \\
+&= 2n\E{[R + \gamma \sum_{a'} \pi(a'|S')Q^\pi(S', a') - Q^\pi(S, A)][\gamma \sum_{a'} \pi(a'|S')\phi(S',a') - \phi(S,A)]}
+\end{align*}
+
+CHECK THIS. LOOK AT PHOTO LATER
+
+Let's forget the parenthesized side on the right except keep in the final term. Bellman equation
+
+Make some regularity assumptions on $f$: $f$ is bounded, measurable, blah blah who cares according to susan
+Note that 
+\begin{align*}
+&\quad \E{\left(R+\gamma \sum_{a'} \pi(a'|S')Q^\pi(S', a') - Q^\pi(S,A)\right)f(S,A)} \\ 
+& \text{using Adam's Law} \\
+&=\E{\left(\E{R+\gamma \sum_{a'} \pi(a'|S')Q^\pi(S', a')|S,A} - Q^\pi(S,A)\right)f(S,A)}
+\end{align*}
+0 times f is 0
+
+So what's the issue with the expectation on the left? We can't take conditional expectation if $f$ depends on anything we're conditioning on. $f(s')$ is $\gamma \sum_{a'} \dots \phi(S', a')$ in the equation you're trying to fill in from the photo later. 
+
+We notice that this doesn't satisfy the minimal condition for an $M$ estimator to be valid (expectation is 0).
+
+Z-estimator
+15/36
+
+$0 = \Psi(\theta) = \mathbb{E}_\theta\left[\phi(X,\theta)\right], X \sim f_\theta$
+
+True parameter satisfies the above.
+
+given sampels $\{X_i\}_{i = 1}^n$ with each $X_i \sim f_{\theta^\star}$
+
+Take the data, average over, solve for 0, this becomes our estimator.
+
+Oftentimes, we substitute $\phi$ with $\phi'$ for some reason...
+isn't this just the derivative? but why
+
+We'll be doing Z-estimation based on Bellman's Equation
+$\psi$ is the derivative  on an objective function wrt $\theta$
+Another approach
+16/36
+
+$$\Psi(S,A,S',R;w) = (\mathcal{T}^\pi Q_w - Q_w)\mathbbm{1}_{S, A}$$
+
+These should be exactly equal for the right $w$. 
+
+This would be equivalent to the above wrapped in () with indicator $\mathbbm{1}_{s,a}$.
+
+16/36
+
+THIS IS THE EQUATION THAT SHE WROTE. COPY THIS ONE INSTEAD OF PHOTO.
+
+We can multiply this expression (the whole expression??? on the right board) by any $f(S, A)$ to still have expectation zero. 
+
+This is the one-entry version of the matrix version?
+
+17/36
+
+Temporal difference error
+
+arbitrarily choose feature $\phi(S,A)$ to be our $f(S,A)$
+comes about naturally if you think about target in TD error equation
+
+figure out what $\delta$ is
+
+in TD, we're using our old $w$'s to figure out new ones.
+
+Let's derive our estimator
+
+\begin{align*}
+\boldsymbol{0} &= \E{\delta_w \phi(S,A)} \text{$\delta$ is the same as in slide 17} \\
+&=\E{(\underbrace{R+\gamma \sum_{a'} \phi(a'|S')\phi(s', a')^\top w - \phi(S,A)^\top w}_{p \times 1})\underbrace{\phi(S,A)}_{p \times 1}} \\
+&=\E{R\phi(S,A)} + \underbrace{\E{\phi(S,A) (\gamma \sum_{a'} \pi(a'|S')\phi(S', a') - \phi(S,A))^\top}}_{-\boldsymbol{A}}w \\
+\boldsymbol{0} &= b - \boldsymbol{A}w
+\end{align*}
+
+slide 18/36
+
+LSTD essential solves the expressions on 18.
+
+We can regularize by adding l2 over $p$ dimesnions, very much like least squares. Can have a high dimensional feature and regularize the equation.
+
+To regularize, you either add or subtract the tuning parameter times the derivative of the regularizer.
+
+19/36
+
+Parr
+
+notice the extra $\Pi$, the projection, without proj, should be equal under the right Q. The operator $T^\pi Q_w$ doesn't have to be a linear combination of features that we're using. So let's project it onto the span of the features that we have. (Finding linear combination of features $\phi$ which is closest based on $\ell_2$ distance.
+
+$\Pi$ is the projection operator onto $\mathcal{H} = \text{Span}(\phi)$
+
+$w_f = \argmin_{\tilde{w}} \E{(f(S,A)-\phi(S,A)^\top \tilde{w})^2}$
+add tilde to slide 19 at penultimate bullet point
+
+w tilde on 19 everywhere, solve for w on RHS of least squares.
+
+
+
+
+I'm going to guess i have to write up all the formulas from the slides.
+ask for the tex file
+
+picture is really helpful on slide 20
+
+btw I picked B221 for my room
+
+21/36
+classic quadratic form
+
+We want to minimize this quadratic form as opposed to solving $\boldsymbol{A}w = b$. Here, we'd have multiple $w$'s, somehow we know which solution is better??? There might be a solution here that isn't the case in the linear version.
+
+If we assume the matrix $\boldsymbol{A}$ is non-singular, then we're simply solving the estimator function.
+
+
+The weights we find are the fixed-point projection of $T^\pi Q$ to $Q$.
+
+
+still preserving the idea of preserving a fixed point. But you add a $\Pi$
+
+Even if there is no linear combination (features are not linear), we at least know our target $Q$.
+
+
+\cite{LagoudakisParrLittman2002, LagoudakisParr2003}
+
+\bibliography{stat234}
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

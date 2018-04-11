@@ -1,0 +1,408 @@
+\documentclass[11pt, twocolumn]{article}
+\usepackage{final_project}
+\usepackage{todonotes}
+
+\usepackage{pgffor}
+
+\usepackage[utf8]{inputenc} % \doublespacing
+
+\title{State Space Reduction in Deep Q Networks} \author{Michael Ge,
+Richard Ouyang} \date{April 24, 2018}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+Current methods of Q-learning with deep networks are inhibited by the
+large state space inherent in processing images. The state-of-the-art
+methods used in recent papers \todo{CITE} require often infeasible
+amounts of computational power, time, and data. Although convolutional
+neural networks theoretically reduce the learning time by restricting
+the size of the network and accounting for structural information in
+the data, it is still difficult to learn a good policy in a time- and
+data-efficient manner. We experiment with reducing state space
+dimensionality required by deep Q-networks (DQNs) by applying
+principal component analysis (PCA) to improve learned policies and
+training times on a variety of OpenAI games.
+
+In addition, we provide an extensible and easy-to-use software
+framework to test various types of agents and Q-networks, even for
+games not tested in this paper (such as Atari games).
+
+\section{Background}
+
+\subsection{MDP Overview}
+
+We will briefly describe the general Markov Decision Process (MDP)
+framework. Define MDP to be:
+
+\begin{itemize}
+\item $\mathcal{S}$, the set of states. In our usage, each state $s$
+is a transformation of the games' screens, which are matrices of pixel
+values.
+  
+\item $\mathcal{A}$, the set of actions. The available actions $a$
+depend on the setting of the game. In the problems of interest, we
+consider games with discrete, relatively simple action spaces.
+  
+\item $r: \mathcal{S} \times \mathcal{A} \to \mathbb{R}$, the reward
+function. A reward $r_t(s_t, a_t)$ is given to the agent after an
+action $a_t$ is taken at state $s_t$. The reward is often a complex
+function. If we knew the reward function, we would easily know which
+action to take at any state $s_t$ and timestep $t$.
+  
+\item $p: \mathcal{S} \times \mathcal{A} \times \mathcal{S} \to
+\mathbb{R}$, the transition probabilities. The agent moves from $s_t$
+to $s_{t+1}$ after taking action $a$ with probability $p(s_{t+1} |s_t,
+a_t)$. In our games, transitions are deterministic, so probabilities
+are either $0$ or $1$.
+  
+\item $\gamma \in [0, 1]$, the discount factor. $\gamma$ discounts
+  future rewards at a constant, compounded rate.
+
+  In reinforcement learning, we seek to learn a policy
+  $\pi: \mathcal{S} \to \mathcal{A}$ that maximizes the expected
+  discounted sum of future rewards at a given
+  state:
+  $$R_t = \mathbb{E}\left[\sum_{i=t}^\infty \gamma^{i-t} r_{i}|s_{t-1}\right]$$
+
+  We define the Q-function under a policy $\pi$ as the expected
+  discounted sum of future rewards given a state and desired action:
+  $$Q^\pi(s_t, a_t) = \mathbb{E}\left[R_t | s_{t-1}, a_{t-1} \right]$$
+
+  The optimal Q-function has been proven to satisfy the Bellman equation:
+
+  $$Q^\star (s, a) = r(s, a) + \gamma \max_{a' \in \mathcal{A}} Q^\star(s', a')$$
+\end{itemize}
+
+
+\subsection{Deep Q-Networks}
+
+also talk about convolutional neural networks and how they apply to
+DQNs and DDQNs
+
+\subsection{PCA}
+
+talk about what principal components analysis (PCA)
+does. dimensionality reduction technique that projects the original
+features into a smaller dimension. PCA chooses the axes with the most
+variance to construct this smaller space. The resulting features have
+zero correlation with each other. In interpreting images, PCA keeps
+transformations of the most variable pixels, eliminating the
+information contained in pixels with very little variance
+
+\subsection{OpenAI Gym}
+
+OpenAI Gym \cite{brockman2016openai} offers a set of several standard
+games on which to test reinforcement learning algorithms. We tested
+our algorithms, which learn on pixel images, on the following
+games. See Figure \ref{fig:game_images} for sample images of the game.
+
+\begin{description}
+\item[\href{https://gym.openai.com/envs/CartPole-v0/}{CartPole-v0}]
+This is the classic reinforcement learning environment. At every time
+step, the agent receives a reward of $1$ and chooses to push the cart
+either right or left. The game ends when the pole falls to an angle
+greater than 15 degrees from vertical or when the cart moves off the
+screen. See Figure \ref{fig:game_images} for sample images of the
+game.
+\item[\href{https://gym.openai.com/envs/Acrobot-v1/}{Acrobot-v1}]
+Acrobot is a reinforcement learning game consisting of a contraption
+made of two bars connected by a joint. The agent can only apply force
+to this connecting joint (left, right, or no movement) and must swing
+the contraption so that the lower bar reaches a certain height. The
+agent receives a reward of $-1$ for every time step the goal is not
+reached.
+\item[\href{https://gym.openai.com/envs/MountainCar-v0/}{MountainCar-v0}]
+MountainCar is a reinforcement learning game in which the agent tries
+to drive a car uphill. The car is not strong enough to climb the hill
+itself and thus must learn to use gravity to achieve the necessary
+speed. At every time step, the three movements available are
+accelerating, reversing, and doing nothing. The agent receives a
+reward of $-1$ for every time step the goal is not reached.
+\end{description}
+
+\begin{figure*}[!ht] \foreach \game in {CartPole, Acrobot, MountainCar}
+{ \subfloat[Sample original image of the \game~game
+screen. \label{subfig:\game_original}]{%
+\includegraphics[width=0.35\textwidth]{final_project/game_images/\game_original.pdf}
+} \hfill \subfloat[Sample processed image of the \game~game
+screen.\label{subfig:\game_processed}]{%
+\includegraphics[width=0.35\textwidth]{final_project/game_images/\game_processed.pdf}
+} }
+\caption{Original and processed images from the three games discussed
+in this paper. The processed images were created by grayscaling the
+original images and resizing from $600 \times 400$ pixels to $80
+\times 80$ pixels.}
+\label{fig:game_images}
+\end{figure*}
+
+\section{Methods}
+
+We replicated the original deep Q-network papers
+\cite{mnih2013playing, mnih2015human} in Python, using PyTorch
+\cite{paszke2017pytorch} for the neural network architecture and
+OpenAI Gym \cite{brockman2016openai} to test and compare our
+algorithms.
+
+We also implemented a Double Deep Q-Network (DDQN) \cite{van2016deep}
+as a slight modification to the original Deep Q-Network (DQN).
+
+\subsection{Image Preprocessing}
+
+In this project, our goal was to learn the optimal policy for the
+games without using parametric data. Instead, we focused more on image
+processing rather than using the state information given by the Gym
+environment.
+
+At each time step, we obtained the RGB (color) mapping of the game
+screen, resized the image to $80 \times 80$ pixels (even if the
+original game screen was not a square), and converted the image to
+grayscale. We then took the difference between the current image and
+the last image as the state to input into our convolutional neural
+network.
+
+\subsection{Network Structure}
+
+Similar to \cite{mnih2013playing} and \cite{mnih2015human}, we used
+three hidden layers in our convolutional neural network. Convolutional
+neural networks work particularly well with images and other
+structured data\todo{explain why}.
+
+Our baseline DQN takes in an $80 \times 80$ grayscale image. Each
+hidden layer in the network convolves the previous layer's output into
+multiple filters, followed by a batch normalization and a leaky ReLU
+to prevent dead ReLU nodes. The first layer convolves $8$ $8 \times 8$
+filters with stride $4$; the second layer convolves $16$ $4 \times 4$
+filters with stride $2$; the final hidden layer convolves $16$ $4
+\times 4$ filters, this time with stride $1$. A max pooling with
+kernel size $2$ is then applied to reduce the dimensionality of the
+output, and the final layer is fully connected and maps linearly to
+the number of actions available. For instance, since CartPole contains
+two actions at any time, the output of the neural network contains two
+nodes. This structure saves time when forwarding through the network,
+since a single forward pass for a given state $s$ gives
+$\hat{Q}_\text{network}(s, a)$ for all available $a$.
+
+\subsection{Hyperparameters}
+
+We tested many configurations of hyperparameters, varying the
+following:
+
+\begin{description}
+    \item[Model] One of several DQN and DDQN models. In addition to
+the conventional grayscale grayscale versions, a PCA version, a
+convolutional PCA version, and a mini convolutional PCA version of
+both the DQN and the DDQN are available.
+    
+    \item[Frame skip] The number of time steps for which the same
+action is repeated. Typically set to $k = 3$.
+    
+    \item[Update frequency] The number of action selections between
+each minibatch update. Typically set to $4$.
+    
+    \item[Number of minibatch training steps] The length of time the
+model should be trained, expressed in terms of the number of minibatch
+training steps. Typically between $10000$ and $100000$.
+    
+    \item[Replay memory size] The maximum number of transitions --
+each of which is an $(s, a, r, s')$ tuple -- stored in the replay
+memory.
+    
+    \item[Target update] If the model uses a target network, the
+number of trains between each target network update. Each update
+involves setting the target network parameters to the main network
+parameters.
+    
+    \item[Learning rate] The (initial) learning rate used by the
+optimizer. A higher rate results in a model that learns faster but may
+diverge.
+    
+    \item[Learning rate annealing] Whether the learning rate is
+annealed to a smaller value. In our experiments, the learning rate was
+slowly annealed to a final learning rate of $0.0005$.
+    
+    \item[Batch size] The minibatch size, or the number of transitions
+used in each training step. The two values tested were $32$ and $128$.
+    
+    \item[Loss function] The loss function used in the model. The
+Huber loss and the MSE loss were the two loss functions used.
+    
+    \item[Regularization] The weight decay in the optimizer. This
+value typically ranges from $0$ to $1$.
+\end{description}
+
+
+We performed several grid searches to find hyperparameters that worked
+for all three games. (we found that CartPole preferred a larger
+learning rate) \todo{add more hyperparameters}
+
+Our final hyperparameters, used in the rest of the paper, are
+available in Table \ref{tab:grid_search_hyperparameters}.
+
+\begin{table}[!htbp] \centering
+    \begin{tabular}{c|c} \toprule Hyperparameter & Value \\ \midrule
+Model & DDQN \\ Frame skip & $3$ \\ Update frequency & $4$ \\ Training
+updates & $100000$ \\ Replay memory size & $10000$ \\ Target update &
+N/A \\ Learning rate & $0.001$ \\ Learning rate annealing & Yes \\
+Batch size & $128$ \\ Loss function & Huber loss \\ Regularization &
+$0.1$ \\ \bottomrule
+    \end{tabular}
+    \caption{The hyperparameters found by grid search and used for the
+PCA variants of the DQN.}
+    \label{tab:grid_search_hyperparameters}
+\end{table}
+
+We initially began with a learning rate of $0.1$, but this was far too
+large: CartPole would learn to durations of around 200 time steps
+within a few dozen iterations but would quickly diverge. The other two
+games also did not converge. Significant improvements occurred after
+reducing to a learning rate of about $0.001$. Although
+\cite{mnih2013playing, mnih2015human} used a learning rate of
+$0.00025$, we found that learning was far too slow for our purposes
+and instead opted for a larger learning rate.
+
+Recognizing that our larger learning rate might ultimately lead to
+divergence, we decided to implement learning rate annealing. The
+learning rate anneals according to the equation $$\alpha_t =
+\alpha_\text{initial} \max\left(\exp\left(-\frac{t}{10000}\right),
+\frac{0.0005}{\alpha_\text{initial}}\right),$$ where $t$ is the number
+of minibatch training updates that have already occurred, so that the
+learning rate anneals exponentially from its initial value to a final
+value of $0.0005$.
+
+We used an $\epsilon$-greedy agent, annealing $\epsilon$ from
+$\epsilon_\text{initial} = 1$ to $\epsilon_\text{final} = 0.1$
+according to the equation $$\epsilon_t = \epsilon_\text{final} +
+(\epsilon_\text{initial} - \epsilon_\text{final})
+\exp\left(-\frac{t}{\lambda}\right),$$ where $t$ is the number of
+times the agent has already selected an action, and $\lambda = 200$ is
+the decay rate. Each batch consisted of $128$ transitions, each of
+which is a tuple containing $(s, a, r, s')$.
+
+To speed up learning, we used a frame-skipping method described in
+\cite{mnih2013playing, mnih2015human}. When an action is selected,
+that action is repeated for the next $k$ frames, since selecting an
+action and training takes much more time than rendering an additional
+step of the game. We chose $k = 3$ since $k = 4$, which was suggested
+in \cite{mnih2013playing, mnih2015human}, resulted in an extremely
+wobbly cart in the CartPole game. We also updated the network only
+once every $4$ action selections, speeding up the training even
+further.
+
+\subsection{Implementation Details}
+
+We did not have access to GPUs, which significantly speed up
+learning. We also had limited time to run our learning.
+
+\section{Results}
+
+\subsection{Random Policy}
+
+\begin{figure*}[!ht] \foreach \game in {CartPole, Acrobot, MountainCar}
+{ \subfloat[Rewards for a random policy in the
+\game~game. \label{subfig:\game_NoTraining_Random_rewards}]{%
+\includegraphics[width=0.45\textwidth]{final_project/\game/\game_NoTraining_Random_rewards.pdf}
+} \hfill \subfloat[Durations for a random policy in the
+\game~game.\label{subfig:\game_NoTraining_Random_durations}]{%
+\includegraphics[width=0.45\textwidth]{final_project/\game/\game_NoTraining_Random_durations.pdf}
+} }
+\caption{Baseline results from several classic control games from
+OpenAI Gym under a random policy and model.}
+\label{fig:random}
+\end{figure*}
+
+The average rewards and durations for the three games are available in
+Table \ref{tab:random_rewards}.
+
+\begin{table}[!htbp] \centering
+    \begin{tabular}{c|cc} \toprule Game & Average Duration & Average
+Reward \\ \midrule CartPole-v0 & 599.73 & -598.73 \\ Acrobot-v1 &
+18.441 & 18.441 \\ MountainCar-v0 & 2717.77 & -2717.77 \\ \bottomrule
+    \end{tabular}
+    \caption{Average rewards and durations under a random policy for
+the three games.}
+    \label{tab:random_rewards}
+\end{table}
+
+\subsection{Hyperparameter Tuning Results}
+
+In order to find hyperparameters that worked for all three games,
+
+put grid search results here
+
+Target network is bad etc.
+
+\subsection{Deep Q-Network}
+
+\begin{figure*}[!ht] \foreach \game in {CartPole, Acrobot, MountainCar}
+{ \subfloat[Rewards for a DQN policy in the \game~game with
+$\texttt{lr}=0.001$, RMSProp optimizer, Huber
+Loss. \label{subfig:\game_DQN_GS_EpsilonGreedy_rewards}]{%
+\includegraphics[width=0.45\textwidth]{final_project/\game/\game_DQN_GS_EpsilonGreedy_rewards.pdf}
+} \hfill \subfloat[Durations for a DQN policy in the \game~game with
+$\texttt{lr}=0.001$, RMSProp optimizer, Huber
+Loss. \label{subfig:\game_DQN_GS_EpsilonGreedy_durations}]{%
+\includegraphics[width=0.45\textwidth]{final_project/\game/\game_DQN_GS_EpsilonGreedy_rewards.pdf}
+} }
+\caption{DQN Results from several classic control games from OpenAI
+Gym under the $\epsilon$-greedy policy and DQN model.}
+\label{fig:dqn_1}
+\end{figure*}
+
+For MountainCar, this is the best we ever saw. Both Acrobot and
+MountainCar work well with DQN, lr=0.001, original architecture, frame
+skip 3 or 4, update frequency 1, no annealing, no regularization,
+Huber loss, about 500 episodes. CartPole doesn't train so well
+though. It seems to prefer a larger learning rate.
+
+In general, MountainCar was rather difficult to learn, as the final
+policy seems to depend heavily on the random initialization. With
+suboptimal hyperparameters, the episodes under a random policy can
+extend to tens of thousands of time steps, and all transitions entered
+into the replay memory have $r = -1$, so the learned policy can
+diverge.
+
+\subsection{Double Deep Q-Network}
+
+\subsection{PCA Networks}
+
+\begin{figure*}[!ht] \foreach \game in {CartPole, Acrobot, MountainCar}
+{ \subfloat[Sample original image of the \game~game
+screen. \label{subfig:\game_DQCNN_PCA}]{%
+\includegraphics[width=0.35\textwidth]{final_project/game_images/\game_DQCNN_PCA.pdf}
+} \hfill \subfloat[Sample processed image of the \game~game
+screen.\label{subfig:\game_DQCNN_PCA_Mini}]{%
+\includegraphics[width=0.35\textwidth]{final_project/game_images/\game_DQCNN_PCA_Mini.pdf}
+} }
+\caption{Example image inputs for PCA Deep Q-Networks.}
+\label{fig:pca_images}
+\end{figure*}
+
+\todo{talk about results here\dots}
+
+\section{Discussion}
+
+\section{Conclusion}
+
+\subsection{Further Directions}
+
+Consider the same for Atari games and others, as long as they have
+discrete actions. Also try to extend to games with continuous actions
+with a different type of network architecture. Perhaps a convolutional
+neural network linked with a network in which actions are the inputs?
+
+We had severely limited computational power and time, so extending the
+paper using more varied learning rates and annealing schedules could
+offer better performance. Also computing using GPUs (which were
+unfortunately not available) rather than CPUs would have been great.
+
+Adding Hindsight Experience Replay to MountainCar
+
+\newpage \bibliography{final_project}{} \bibliographystyle{plain}
+
+\end{document}
+
+%%% Local Variables: %%% mode: latex %%% TeX-master: t %%% End:

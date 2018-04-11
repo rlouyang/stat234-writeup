@@ -1,0 +1,272 @@
+\documentclass[11pt]{article}
+\usepackage{url,amsmath,setspace,amssymb,amsthm,fullpage}
+\usepackage{algorithm,algorithmic}
+\usepackage{bibentry}
+
+% Scribe template modified from original created by UC Berkeley's EECS department
+
+\newcommand{\heading}[5]{
+   \renewcommand{\thepage}{#1-\arabic{page}}
+   \noindent
+   \begin{center}
+   \framebox[\textwidth]{
+     \begin{minipage}{0.9\textwidth} \onehalfspacing
+       {\bf STAT 234 -- Sequential Decision Making} \hfill #2
+
+       {\centering \Large #5
+
+       }\medskip
+
+       {\it #3 \hfill #4}
+     \end{minipage}
+   }
+   \end{center}
+}
+
+\newcommand{\scribe}[4]{\heading{#1}{#2}{Instructor:
+Susan Murphy }{Scribe: #4}{Lecture #1: #3}}
+
+\input{macros}
+
+\bibliographystyle{alpha}
+
+\begin{document}
+\scribe{10}{February 22, 2018}{Least Squares Methods in RL}{Michael Ge}
+
+\textit{This lecture discusses the theoretical underpinnings of using least squares for policy evaluation and iteration. We begin with a review of Markov Decision Processes and extend the model to least-squares interpretations. These notes are adapted from the set of lecture slides created by Peng Liao and Susan Murphy.}
+
+\section{Review of Markov Decision Processes (MDPs)}
+
+Recall that an MDP is defined by a tuple $\langle \mathcal{S}, \mathcal{A}, \mathcal{P}, R, \gamma \rangle$:
+
+\begin{itemize}
+\item $\mathcal{S} = \{s_1, s_2, \ldots, s_n\}$ is a finite set of states. 
+\item $\mathcal{A} = \{a_1, a_2, \ldots, a_m \}$ is a finite set of actions.
+\item $\mathcal{P}$ is a Markovian transition model. Let $\mathcal{P}(s' | a, s)$ be the probability of transitioning to state $s' \in \mathcal{S}$ when taking action $a \in \mathcal{A}$ in state $s \in \mathcal{S}$.
+\item $R$ is a random variable for the reward of action $a$ in state $s$. $r: \mathcal{S} \times \mathcal{A} \to \mathbb{R}$ is the conditional mean reward of $R$ given state $s \in \mathcal{S}, a \in \mathcal{A}$. Note that if we know the distribution of $R$, we could potentially calculate $r(s, a)$.
+\item $\gamma \in [0, 1)$ is the discount factor of future rewards.
+\end{itemize}
+
+Information flows in MDPs by the following process. For times $t = 0, 1, 2, \ldots$, we:
+
+\begin{enumerate}
+\item Observe the state $S_t \in \mathcal{S}$
+\item Select an action $A_t \in \mathcal{A}$
+\item Observe a new state $S_{t+1} \sim \mathcal{P}(\cdot | S_t, A_t)$
+\item Receive the reward $R_{t+1}$
+\end{enumerate}
+
+\subsection{Policy and Value Function}
+
+We define a (time-stationary) $\pi:\mathcal{S} \to \Omega(\mathcal{A})$ to be a mapping from the state space $\mathcal{S}$ to the set of probability distributions of $\mathcal{A}$. We write $\pi(a|s)$ to be the probability of choosing action $a$ in state $s$. Finally, note that we can write deterministic policy $\pi$ to be $\pi(s)$. A deterministic policy would simply be a setting of $\pi$ that contains probability values of only 0 and 1.
+
+The state-action value function $Q^\pi(s, a)$ of a given policy $\pi$ is the expectation of the discounted, future reward given the present state and present action. In other words, this is the reward of taking an action $a$ in state $s$ and following policy $\pi$ thereafter:
+
+$$Q^\pi(s, a) = \mathbb{E}_\pi\left[\sum_{t=0}^\infty \gamma^t R_{t+1} | S_0 = s, A_0 = a\right]$$
+
+Note that since the transition probabilities are not time-dependent, we could have started at any time other than $t=0$ as well.
+
+\subsection{Bellman Equations}
+
+We define the Bellman equation to be the expectation of discounted rewards given state and action:
+
+$$Q(s, a) = \mathbb{E}_\pi\left[R_{t+1} + \gamma Q (S_{t+1}, A_{t+1}) | S_t = s, A_t = a \right]$$
+
+The value function $Q^\pi$ uniquely solves the above equation. We define the Bellman operator $\mathcal{T}^\pi$ with respect to a policy $\pi$:
+
+$$\mathcal{T}^\pi Q: (s, a) \mapsto \mathbb{E}_\pi\left[R_{t+1} + \gamma Q (S_{t+1}, A_{t+1}) | S_t = s, A_t = a \right]$$
+
+$$\mathcal{T}^\pi Q(s, a) = Q(s,a)$$
+
+If $Q^\pi$ is a fixed point of $\mathcal{T}^\pi$, we can write:
+
+$$\mathcal{T}^\pi Q^\pi = Q^\pi$$
+
+Note that in the above expressions, we are taking expectations with respect to a policy $\pi$ because $A_{t+1}$ depends on $\pi$. But by using the law of iterated expectations (Adam's Law), we can derive the following expression for $\mathcal{T}^\pi Q^\pi$:
+
+$$\mathcal{T}^\pi Q^\pi(s,a)= \E{R_{t+1} + \gamma \sum_{a'} \pi(a' | S_{t+1}) Q(S_{t+1}, a') | S_t = s, A_t = a}$$
+
+We are left with the next state given the present state and action, so no terms depend on $\pi$. Finally, we apply linearity of expectations to simplify the expression further:
+
+$$=r(s,a) + \gamma \sum_{s'} \mathcal{P}(s' | s, a)\sum_{a'} \pi(a'|s')Q(s', a')$$
+
+\subsection{Optimal Policy}
+
+The optimal value function $Q^\star(s, a)$ is the maximal value function over all policies:
+
+$$Q^\star(s, a) = \max_{\pi} Q^\pi(s, a)$$
+
+Given the optimal value function, we can directly find the optimal policy:
+
+$$\pi^\star(a | s) = \begin{cases}
+  1 & a = \argmax_{a \in \mathcal{A}} Q^\star(s, a)\\
+  0 & \text{otherwise}
+\end{cases}$$
+
+\section{Policy Evaluation: Least-Square Temporal Difference (LSTD)}
+
+We'll now be discussing LSTD, a batch, off-policy method of learning. It is a batch method since we need to aggregate a set of data before learning, and off-policy because we do not strictly follow a static policy.
+
+We define our training data as a set of transition samples $\mathcal{D}$:
+
+$$\mathcal{D} = \{S_i, A_i, R_i, S_i'\}_{i=1}^n$$
+
+\subsection{Value Function Approximation}
+
+Thus far, we have dealt with MDPs with small number of state spaces. In these situations, we would be able to learn the $Q$-function by learning a look-up table. But we might imagine that as the state space increases, the table-based learning process might become difficult due to insufficient data. As we begin to consider MDPs with large state spaces, we'll consider approximations for the value function.
+
+One such solution would be to approximate the value function by a linear function. We will construct a feature vector $\phi(s, a) \in \mathbb{R}^p$ and approximate the value function by:
+
+$$Q^\pi(s, a) \approx Q_w(s, a) = \phi(s, a)^\top w, w \in \mathbb{R}^p$$
+
+This is a called a linear approximation because it's linear in the weights $w$, not the features. The features can be high-order basis functions or other complex features that transform the features into $\mathbb{R}^p$. In any case, the decision boundary is decidedly linear. Note that this is different from deep learning approaches: in this setting, we are still selecting the appropriate basis function to learn on. In deep learning, the features are automatically formed.
+
+Finally, suppose we had $n$ states and $k$ actions. In the tabular setting, our table size would be $n \times k$. We could reduce the linear approximation to the table form by one-hot encoding state-action pairs and learning a $w$ with length $p = n \times k$.
+
+\subsection{Bellman Error Minimizing Approximation}
+
+In order to approximate a $Q$-table with a linear function, we will require that the approximate value function satisfies the Bellman equation ($Q^\pi = \mathcal{T}^\pi Q^\pi)$ as closely as possible.
+
+A natural objective function is the expected square loss between the Bellman equation and the linear approximation:
+
+$$J(w) = \E{(\mathcal{T}^\pi Q_w(S,A) - Q_w(S,A))^2}$$
+
+We will take the difference and map it to a scalar distance metric, approximating elements in $Q_w$ such that this distance is minimized. In other words, our goal is to find weights $w$ that minimize $J(w)$:
+$$w^\pi = \argmin_w J(w)$$
+In doing this, we assume that there exists a weight vector $w^\pi$ such that:
+
+$$Q^\pi(s, a) \approx \phi(s, a)^\top w^\pi, \forall s \in \mathcal{S}, a \in \mathcal{A}$$
+
+Note that we are learning an \textit{approximation} of $Q$ for a policy $\pi$ rather than actually learning a $Q$ function for a given $\pi$. We are making a strong assumption that the reward can be modeled as a linear combination of $\phi$, so if we have a rich set of features, there is no reason to believe this linear combination will be accurate. Furthermore, be careful of the issue where certain states and actions might occur frequently in a batch dataset, though infrequently under a policy $\pi$. We might be overweighting the importance of some actions with a bad dataset.
+
+\subsection{Discount Rate $\gamma = 0$}
+When the discount rate $\gamma = 0$, we find that $\mathcal{T}^\pi Q(s, a) = r(s, a)$ is independent of the unknown weights, $w$. As a result, the objective function $J(w)$ becomes:
+$$J(w) = \E{(r(S,A) - \phi(S,A)^\top w)^2} = \E{(R - \phi(S,A)^\top w)^2} + \text{Const.}$$
+
+We can then find an optimal weight vector $w^\star$ that minimizes the above expression:
+
+$$w^\star = \argmin_w \E{(R - \phi(S, A)^\top w)^2}$$
+
+This can be estimated using empirical least squares:
+
+$$\hat{w} = \argmin_w \sum_{i=1}^n (R_{i+1} - \phi(S_{i}, A_{i})^\top w)^2$$
+
+\subsection{Discount Rate $\gamma \neq 0$ -- naive approach}
+
+Recall that:
+$$\mathcal{T}^\pi Q(S, A) = \E{R + \gamma \sum_{a'} \pi(a'|S')Q(S', a') | S, A}$$
+
+For $\gamma > 0$, we find that $\mathcal{T}^\pi Q$ depends on $w$. A naive solution to this would be to take the minimum based on a constructed estimator of:
+
+$$w^\pi = \argmin_w \E{(\mathcal{T}^\pi Q_w(S,A) - Q_w(S,A))^2}$$
+
+This $M$ estimator is the empirical least squares:
+
+$$M_n(w) = \sum_{i=1}^n (R_{i+1} + \gamma \sum_{a'} \pi(a' | S_i') \phi(S_i', a')^\top w - \phi(S_i, A_i)^\top w)^2$$
+
+\subsubsection{Problem with Naive Approach}
+
+There are two methods of estimation: $M$- and $Z$-Estimation. In $M$-estimation, we minimize/maximize an expression, while in $Z$-estimation, we solve for an expression that equals 0. $M$-estimation, or minimization/maximization estimation, of $w^\pi$ requires $M_n$ to be differentiable, $\sqrt{n}$-consistent, and have an unbiased associated estimating equation. That is,
+
+$$\frac{d}{dw}\E{M_n(W)}|_{w=w^\pi} = 0$$
+
+The least squares expression we are working with is an $M$-estimator, so the expectation of the derivative of $M$ should be 0 at the minimum/maximum. Unfortunately, this is not the case:
+
+\begin{align*}
+  \frac{d}{dw}M_n(w) &= 2\sum_{i=1}^n\left(R_{i+1} + \gamma \sum_{a'} \pi(a'|S'_{i})\phi(S_i', a')^\top w - \phi(S_i, A_i)^\top w \right) \\
+  &\quad \quad \quad \quad \times \underbrace{\left[\gamma \sum_{a'} \pi(a'|S_i')\phi(S_i, a') - \phi(S_i, A_i)\right]}_{\text{$p \times 1$ for $p$ features}}\\
+\end{align*}
+Taking the expectation of the derivative with respect to $w$ and substituting in $w^\pi$:
+\begin{align*}
+  \E{\frac{d}{dw} M_n(w) |_{w=w^\pi}} &=2n \E{\left[R + \gamma \sum_{a'} \pi(a'|S')\phi(S',a')^\top w^\pi - \phi(S,A)^\top w^\pi\right]\left[\gamma \sum_{a'} \pi(a'|S')\phi(S',a') - \phi(S,A)\right]} \\
+&= 2n\E{\left[R + \gamma \sum_{a'} \pi(a'|S')Q^\pi(S', a') - Q^\pi(S, A)\right]\left[\gamma \sum_{a'} \pi(a'|S')\phi(S',a') - \phi(S,A)\right]}
+\end{align*}
+
+Let $f(S, A) = \gamma \sum_{a'} \pi(a'|S')\phi(S',a') - \phi(S,A)$:
+\begin{align*}
+&= 2n\E{\left[R+\gamma \sum_{a'} \pi(a'|S')Q^\pi(S', a') - Q^\pi(S,A)\right]f(S,A)} \\ 
+& \text{using Adam's Law, we get:} \\
+&= 2n\E{\left[\E{R+\gamma \sum_{a'} \pi(a'|S')Q^\pi(S', a')|S,A} - Q^\pi(S,A)\right]f(S,A)}
+\end{align*}
+
+If we can show that the inner expectation is 0, then since $0 \cdot f(S, A) = 0$, the outer expectation is also 0. However, in the inner expectation, we cannot take the conditional expectation if $f$ depends on anything we're conditioning on, which it does. We find that the expectation does not equal 0. Thus, $M_n(w)$ is not a good proxy for $J(w)$, since the unbiased assumption does not hold for this naive approach
+
+\subsection{$\boldsymbol{Z}$-Estimator Equation}
+
+Suppose the true parameter $\theta^\star$ is a solution of:
+
+$$0 = \Psi(\theta) = \mathbb{E}_\theta\left[\phi(X,\theta)\right], X \sim f_\theta$$
+One natural way to estimate $\theta^\star$ given samples $\{X_i\}_{i = 1}^n$ with each $X_i \sim f_{\theta^\star}$ is to solve:
+
+$$\Psi_n(\theta) = \frac{1}{n} \sum_{i=1}^n \psi(X_i, \theta) = 0$$
+
+The resulting estimator is called the $Z$-estimator. Oftentimes, we substitute $\psi$ with its derivative, $\psi'$. When $\psi$ is the derivative of an objective function with respect to $\theta$, this becomes $M$-estimation. We'll be doing $Z$-estimation based on Bellman's equation.
+
+\subsection{Another Approach}
+
+Again, we can pretend that there exists a $w^\pi$ such that:
+
+$$Q^\pi(s, a) = \phi(s, a)^\top w^\pi, \forall s \in \mathcal{S}, a \in \mathcal{A}$$
+
+Equivalently, pretend that $Q^\pi$ belongs to $\mathcal{H} = \text{span}(\phi)$ for $p \times 1$ dimensional features $\phi$. 
+These should be exactly equal for the right $w$. By the Bellman equation, $Q^\pi = \mathcal{T}^\pi Q^\pi$ implies:
+
+$$\E{R + \gamma \sum_{a'} \pi(a' | S') \phi(S', a')^\top w^\pi - \phi(S, A)^\top w^\pi | S = s, A = a} = 0$$
+
+Suppose we arbitrarily choose our features $\phi(S,A)$ to be our $f(S,A)$. We then have the Temporal Difference (TD) error:
+$$\delta(S,A,R, S';w) = R + \gamma \sum_{a'} \pi(a' | S') \phi(S', a')^\top w - \phi(S, A)^\top w$$
+
+$w^\pi$ is the solution to:
+
+$$\Psi(w) = \E{\delta(S,A, R, S'; w) \phi(S,A)} = \mathbf{0} \in \mathbb{R}^p$$
+
+The following is a derivation of the estimator:
+\begin{align*}
+\boldsymbol{0} &= \E{\delta(S,A,R,S'; w) \phi(S,A)} \\
+&=\E{(\underbrace{R+\gamma \sum_{a'} \phi(a'|S')\phi(S', a')^\top w - \phi(S,A)^\top w}_{p \times 1})\underbrace{\phi(S,A)}_{p \times 1}} \\
+&=\underbrace{\E{\phi(S,A)R}}_b + \underbrace{\E{\phi(S,A) (\gamma \sum_{a'} \pi(a'|S')\phi(S', a') - \phi(S,A))^\top}}_{-\boldsymbol{A}}w \\
+\boldsymbol{0} &= b - \boldsymbol{A}w
+\end{align*}
+
+Note that the vector multiplication is point-wise. The solution to the above equation is the estimator for $w^\pi$. The LSTD, $\hat{w}^\pi$, solves the estimating equations:
+
+$$\Psi_n(w) = \frac{1}{n} \sum_{i=1}^n \delta(S_i,A_i,R_{i+1},S_{i+1}; w) \phi(S_i, A_i) = \hat{b} - \hat{\boldsymbol{A}}w = 0$$
+
+Note that we can easily regularize this expression by adding $\ell_2$ (or $\ell_1$) normalization over the $p$ dimensions. This would allow us to have high feature dimensionality.
+
+\subsection{Lagoudakis \& Parr: Projected Fixed-Point Approximation}
+
+Recall:
+
+$$\mathcal{T}^\pi Q^\pi = Q^\pi$$
+
+The operator $\mathcal{T}^\pi Q^\pi$ does not have to be a linear combination of features that we're using, so let's project it onto the span of the features that we have. We can perform a good approximation by minimizing a projected Bellman Error:
+
+$$J(w) = \E{(\Pi\mathcal{T}^\pi Q_w(S,A) - Q_w(S,A))^2} \quad Q_w(s,a) = \phi(s, a)^\top w$$
+
+$\Pi$ is the projection operator onto $\mathcal{H} = \text{span}(\phi)$. For any $f : \mathcal{S} \times \mathcal{A} \to \mathbb{R}$: 
+$$\Pi f = Q_{\tilde{w}_f}, \tilde{w}_f = \argmin_{\tilde{w}} \E{(f(S,A) - \phi(S,A)^\top \tilde{w})^2}$$
+
+Without the $\Pi$ projection, the expression should be equal under the right $Q$. Note that even if $Q \in \mathcal{H}$, its image under the Bellman operator, $\mathcal{T}^\pi Q$ does not necessarily lie in $\mathcal{H}$. In the case of a linear function class $\mathcal{H}$,
+
+$$J(w) = (Aw - b)^\top \Sigma_\phi^{-1}(Aw - b)$$
+
+Here, we have a quadratic form. We'd like to minimize this quadratic form as opposed to solving for $Aw = b$. In this case, we'd have multiple solutions for $w$. 
+$$\Sigma_\phi = \E{\phi(S,A)\phi(S,A)^\top}$$
+$$A = \E{\phi(S,A)(\phi(S,A) - \gamma \sum_{a'}\pi(a'|S')\phi(S', a'))^\top} \in \mathbb{R}^{p \times p}$$
+$$b=\E{\phi(S,A)R} \in \mathbb{R}^p$$
+
+If we assume $A$ is non-singular, then we are simply solving the estimator function, and the minimizer $w^\pi = \argmin_w J(w)$ is unique and solves $Aw = b$. $Q_{w^\pi}$ is the fixed-point of the projected Bellman operator:
+$$\Pi \mathcal{T}^\pi Q = Q$$
+
+This means that $Q^\pi \in \mathcal{H}$, $Q^\pi  = \phi^\top w^\pi$, so $w^\pi$ is indeed the minimizer of $J(w)$. These weights are the fixed-point projection of $T^\pi Q$ to $Q$.
+
+\bibentry{LagoudakisParrLittman2002, LagoudakisParr2003}
+
+\bibliography{stat234}
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

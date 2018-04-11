@@ -1,0 +1,181 @@
+\documentclass[11pt]{article}
+\usepackage{url,amsmath,setspace,amssymb,amsthm,fullpage}
+\usepackage[colorlinks=true]{hyperref}
+\usepackage{algorithm,algorithmic}
+
+% Scribe template modified from original created by UC Berkeley's EECS department
+
+\newcommand{\heading}[5]{
+   \renewcommand{\thepage}{#1-\arabic{page}}
+   \noindent
+   \begin{center}
+   \framebox[\textwidth]{
+     \begin{minipage}{0.9\textwidth} \onehalfspacing
+       {\bf STAT 234 -- Sequential Decision Theory} \hfill #2
+
+       {\centering \Large #5
+
+       }\medskip
+
+       {\it #3 \hfill #4}
+     \end{minipage}
+   }
+   \end{center}
+}
+
+\newcommand{\scribe}[4]{\heading{#1}{#2}{Instructor:
+Susan Murphy}{Scribe: #4}{Lecture #1: #3}}
+
+\input{macros}
+
+\bibliographystyle{alpha}
+
+\begin{document}
+
+\scribe{6}{Feb.~8, 2018}{Markov Decision Processes (MDPs)}{Richard Ouyang}
+
+After our discussion of deterministic MDPs and bandit problems, we now turn to (stochastic) Markov Decision Processes, which are characterized by stochastic states, actions, and rewards. In contrast to bandit problems, there are also multiple, discrete time steps in which to take action in each episode. 
+
+More information on MDPs is available at \cite{suttonbarto, littman}. 
+
+\section{Assumptions on MDPs}
+
+As before, let $S, A, R, S'$ be the state, action, reward, and next state of the reinforcement learning problem. We make a few assumptions that make computation slightly easier:
+
+\begin{description}
+    \item[Transition and reward probabilities are stationary.] In an MDP, the transition-reward probabilities $\prob{S_t = s', R_t = r|S_{t - 1}=s, A_{t - 1}=a}$ don't depend on time $t$. Note that this isn't actually true in real life, since the behavior of a system typically changes over time (such as in mobile health). 
+    
+    \item[Transition probabilities and rewards are Markovian.] The Markovian Property states that $$\prob{S_{t+1} = s', R_{t+1} = r|H_t=\{S_0, A_0, \dots, S_{t}, A_{t}\}} = \prob{S_{t+1}=s', R_{t+1}=r|S_t=s, A_t=a}$$ for all $s, a, r, s'$. This assumption simplifies many of the computations involving the history $H_t$ of the MDP. 
+    
+    Note that this is a modeling assumption, so when designing MDPs, we want to create states such that this is true. For instance, if the next state depends on the past two sets of states and actions, each element in the state space should consist of pairs of states rather than single states. 
+    
+    \item[Policies can be deterministic or stochastic.] In a deterministic policy, $\pi(s) \in \mathcal{A}$, where $\mathcal{A}$ is the space of actions. In a stochastic policy, $\pi(a|s) \triangleq \prob{A_t=a|S_t=s}$. 
+    
+\end{description}
+
+\section{Preliminaries}
+
+For the sake of brevity, we will use the following definitions:
+\begin{align*}
+p(s', r|s, a) &\triangleq \prob{S_t = s', R_t = r|S_{t - 1} = s, A_{t-1}=a} \\
+r(S_{t-1}, A_{t-1}, S_{t}) &\triangleq \E{R_t | S_{t-1}, A_{t-1}, S_t} \\
+p(s'|s, a) &\triangleq \prob{S_t = s' | S_{t-1}=s, A_{t-1} = a}
+\end{align*}
+
+However, we often let $R_t = r(S_{t-1}, A_{t-1}, S_t)$, letting the reward be a deterministic (but possibly complicated) function of $S_{t-1}$, $A_{t-1}$, and $S_t$. In practical applications, the reward is determined by the person designing the system; it is not part of the underlying problem.
+
+\section{Policies and the Value Function}
+
+Consider a policy $\pi$ which maps states to actions, and define a \textit{trajectory} to be the set of all states, actions, and rewards in one instance: $\{S_0, A_0, R_1, S_1, A_1, R_2, \dots\}$. The density of a particular trajectory under $\pi$ is
+$$p(s_0) \prod_{j = 0}^t p(s_{j + 1}|s_j,a_j)\pi(a_j|s_j).$$
+
+We also have $$\mathbb{E}_\pi [R_{t+1+k} | S_t = s] = \mathbb{E}_{\pi} [R_{t'+1+k} | S_{t'} = s].$$ This equality requires stationarity and the fact that the reward being considered is $1 + k$ time steps in the future from state $s$. Moreover, the conditional densities given $s$ are the same. (This underlies Bellman's Equation.)
+
+In searching for the optimal policy, we seek to find the $\pi$ that maximizes a discounted return $$\E{\sum_{k = 0}^\infty \gamma^k R_{t + 1 + k}}.$$ This expression may not be finite, so we restrict the discount rate $\gamma \in (0, 1)$ and assume that $r(s, a, s')$ is bounded for all $s, a, s'$. Using standard properties of expectation, these conditions imply that the sum is bounded a.e.~(almost everywhere).
+
+The value of state $s$ under $\pi$ is $$V^\pi(s) = \mathbb{E}_\pi\left[\sum_{k = 0}^\infty \gamma^k R_{t + 1 + k}|S_t=s\right].$$ Our real goal is to learn the $\pi$ that maximizes $V^\pi(s)$ at all $s$. Equivalently, we seek a policy that maximize the expected discounted reward from any state $s$.
+
+\textit{Aside:} What if $\gamma = 0$? By convention, we let $0^0 = 1$. Then, since $0^0 R_{t+1} = R_{t+1}$ and $0^k R_{t+1+k} = 0$ for $k > 0$, we can see that this special case simply seeks to maximize the next reward. Therefore, $\gamma = 0$ implies a bandit-type setting in which the optimal policy makes a greedy decision.
+
+\section{Returns and Episodes}
+
+Many reinforcement learning problems are \textit{episodic}: if the Markov process has an absorbing state and $T$ is the time of entry into this state and $T$ is finite with probability 1, then the process is episodic (indefinite horizon). All of mobile health is like this since we haven't yet achieved immortality. 
+
+The discount factor $\gamma$ from above turns infinite horizons into episodic problems with an indefinite horizon. Discounted horizon problems are usually actually episodic problems. We now show this fact.
+
+We assume that $T \sim \text{Geom}(\gamma)$, so that $\prob{T=t}=\gamma^t(1 - \gamma)$. Additionally, we make the relatively strong assumption that $T$ is independent of the Markov process. (Ordinarily, in practical applications, the time of entry into the absorbing state can depend heavily on the process itself.) In mobile health, the absorbing state is disengagement (or death). You want to delay this as long as possible. 
+
+Since the process stops at time $T$, we have
+\begin{align*}
+\mathbb{E}_\pi\left[\underbrace{\sum_{k = 0}^{T - t - 1} R_{t+1+k}}_{\sum_{k=t+1}^T R_k}|S_t=s,T>t\right] &= \mathbb{E}_\pi\left[\sum_{k = 0}^\infty \mathbbm{1}_{k \leq T - t - 1}R_{t+1+k}|S_t=s, T > t\right] \\
+& \text{since $\mathbbm{1}_{k \leq T - t - 1} = \mathbbm{1}_{T > k+t}$, and by Adam's Law} \\
+&= \mathbb{E}_\pi\left[ \sum_{k=0}^\infty \mathbb{E}_\pi[\mathbbm{1}_{T > k+t}R_{t+1+k} | T>t, S_t=s,R_{t+1+k}]|S_t=s,T>t\right] \\
+&= \mathbb{E}_\pi\left[ \sum_{k=0}^\infty \mathbb{E}_\pi[\mathbbm{1}_{T > k+t} | T>t, S_t=s,R_{t+1+k}]R_{t+1+k}|S_t=s,T>t\right] \\
+& \text{since $T$ is independent of the Markov process} \\
+&= \mathbb{E}_\pi\left[ \sum_{k=0}^\infty \mathbb{E}_\pi[\mathbbm{1}_{T > k+t} | T>t]R_{t+1+k}|S_t=s,T>t\right] \\
+&= \mathbb{E}_\pi\left[ \sum_{k=0}^\infty \mathbb{E}_\pi[\mathbbm{1}_{T > k+t} | T>t]R_{t+1+k}|S_t=s,T>t\right] \\
+&\text{since $\prob{T > k+t | T > t} = \gamma^k$} \\
+&=\mathbb{E}_\pi\left[\sum_{k=0}^\infty \gamma^k R_{t+1+k} | S_t = s, T > t\right] \\
+&\text{again since $T$ is independent of the Markov process} \\
+&=\mathbb{E}_\pi\left[\sum_{k=0}^\infty \gamma^k R_{t+1+k} | S_t = s\right] \\
+\end{align*}
+
+\section{Temporal Difference Learning}
+
+We now turn to temporal difference (TD) learning, which uses Monte Carlo methods to learn a value function policy. This algorithm lies at the intersection between statistics, stochastic gradients, and reinforcement learning. The general problem entails solving a reinforcement learning problem by averaging sample returns. 
+
+Our training set consists of $n$ trajectories, the $i$th of which is $$\{S_0, A_0, R_1, S_1, A_1, R_2, S_2, \dots, S_{T_i-1},A_{T_i-1},R_{T_i}\}.$$ The $A_t$'s are selected via policy $\pi$, and the rewards are a function of $S_t$, $A_t$, and $S_{t+1}$, as before: $R_{t+1}=r(S_t,A_t,S_{t+1})$. Our goal is to use this dataset to estimate $V^\pi(s)$. As in the previous section, we assume the $T \sim \text{Geom}(\gamma)$, and $T$ is independent of the Markov process of states.
+
+How might you estimate the value function? One of the best ways is just to use a sample average. Therefore, for notation purposes, we will let $\mathbb{P}_n$ be the average over the $n$ sample trajectories, i.e., 
+$$\mathbb{P}_n f(x) \triangleq \frac{1}{n}\sum_{i = 1}^n f(x_i),$$ where $x_i$ denotes the $i$th trajectory.
+
+To find the value function for each state $s$, we want to compute the average reward starting from state $s$ for the remainder of the episode:
+$$\hat{V}^\pi(s) = \frac{\mathbb{P}_n \sum_{t = 0}^{T-1} \mathbbm{1}_{S_t=s} \sum_{k=0}^{T-t-1}R_{t+1+k}}{\mathbb{P}_n \sum_{t=0}^{T-1} \mathbbm{1}_{S_t = s}} $$
+
+The above is actually the solution to something that looks like a least-squares equation. In particular, $\hat{V}^\pi(s)$ is the solution to
+
+$$0 = \mathbb{P}_n \sum_{t=0}^{T-1} \left[\sum_{k=0}^{T-t-1}R_{t+1+k} -\hat{V}^\pi(s)\right]\boldsymbol{1}_{S_t}$$
+
+We have discrete states, and we want estimate the value $\hat{V}^\pi(s)$ of every state. Therefore, in the regression, each state will have its own parameter $\theta_s$, and the indicators $\mathbbm{1}_{S_t = s}$ are the independent variables:
+
+$$\hat{V}^\pi(s) = \sum_{s \in |\mathcal{S}|} \theta_s\mathbbm{1}_{S_t = s} = \theta_s$$
+
+The target in the regression formulation is
+
+$$Y_t = \sum_{k=0}^{T - t - 1} R_{t+k+1}.$$
+
+We seek to minimize the standard least-squares loss function $$\mathbb{P}_n \sum_{t = 0}^{T-1} \left[Y_t - \sum_{s \in |\mathcal{S}|} \theta_s\mathbbm{1}_{S_t = s}\right]^2.$$
+
+We take the derivative of this with respect to $\boldsymbol{\theta}$ and set it equal to 0, giving
+
+$$0 = 2 \mathbb{P}_n \sum_{t=0}^{T-1}\left[Y_t - \sum_{s \in |\mathcal{S}|} \theta_s \mathbbm{1}_{S_t = s}\right] \boldsymbol{1}_{S_t}.$$
+
+We didn't complete this in lecture, but it was mentioned that continuing with this ``non-parametric least-squares'' method yields the \href{https://en.wikipedia.org/wiki/Temporal_difference_learning}{temporal difference (TD) algorithm}. More information about the TD algorithm is also available in Chapter 6 of \cite{suttonbarto}. 
+
+\textit{Aside:} There is often so much noise in this problem that it isn't always necessary to find the value of every single state. State aggregation is often fine.
+
+% want to reduce variance in update
+
+% Lucas: may want to introduce stochasticity, but this is different from using the noise in the data
+
+\section{Outcomes in Micro-Randomized Trials (MRTs)}
+
+At the beginning of class, we briefly reviewed a few of the studies discussed in previous lectures. One of the main points was that the construction of rewards and time steps is determined exogenously by the researcher. The difference between proximal and distal outcomes, if any, was also discussed. 
+
+The below studies are described in posters at this \href{https://methodology.psu.edu/ra/adap-inter/mrt-projects#proj}{link}.
+
+\subsection{Heartsteps MRT to Promote Physical Activity Among Sedentary People}
+
+As discussed before, the goal of this study was to see whether encouraging messages have any impact on the number of steps in real time. The proximal outcome was the number of steps in the 30 minutes after the message, whereas the distal outcome was the total number of steps during the whole study. 
+
+Note that these two outcomes are slightly different, and optimizing one may sacrifice the other. It is possible for these messages to increase the number of steps in the 30 minutes immediately after but decrease the total number of steps during the day. This particular study did not worry about displacement, since only the effectiveness of messages was considered.
+
+For the activity planning aspect of the study, the proximal outcome is physical activity during the day, and the distal outcome is the total number of steps in the whole study period. These two outcomes are more closely linked, since the proximal outcomes sum to the distal outcome.
+
+\subsection{Sense\texorpdfstring{\textsuperscript{2}}{2}Stop MRT for Stress Management in Newly Abstinent Smokers}
+
+This study sought to determine whether it was worth prompting stress-management exercises to reduce the probability of stress episodes in newly abstinent smokers. In this study, the proximal outcome -- the probability of stress episodes -- is different from the distal outcome -- whether the person relapses or continues smoking abstinence. Again, there is a mismatch between what you're trying to achieve in the moment and the distal outcome.
+
+% \section{Data Collection MRT to Promote Engagement in Substance Use Research}
+
+\subsection{Additional Comments}
+
+There are several big issues in designing reinforcement learning experiments. 
+
+\begin{enumerate}
+    \item How do you choose the rewards? The design of rewards influences how quickly algorithms learn and whether they learn at all. See the section on the \hyperref[sec:cartpole]{cart-pole problem} for one example.
+    
+    \item What constitutes time? For instance, in HeartSteps, how do you choose the times in which to possibly conduct an intervention? Often this depends on what data is available.
+
+    In mobile health studies, there is typically a large amount of data: sensor data, wearable data, interactions with the app, and measurements that scientists believe could be relevant. Therefore, the state space and time steps can vary widely depending on the study. 
+    
+    \item There tend to be multiple causal pathways that lead to the distal outcome, which makes relating proximal and distal outcomes more difficult. As Professor Murphy said, ``RL is essentially a causal inference setting.''
+\end{enumerate}
+
+\section{The Cart-Pole Problem}
+\label{sec:cartpole}
+
+The cart-pole problem is a reinforcement-learning setting in which the policy tries to balance a pole on a cart by moving the cart. In the most intuitive reward construction for this problem, the policy gets a reward of 1 for every second the pole doesn't fall. However, in practice, a more common reward is the angle of the pole above the cart. It turns out that reinforcement learning algorithms learn much faster by managing this angle (keeping it close to 90 degrees) than by purely optimizing for time. 
+
+\bibliography{stat234}
+\end{document}

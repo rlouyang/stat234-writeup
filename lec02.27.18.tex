@@ -1,0 +1,332 @@
+\documentclass[11pt]{article}
+\usepackage{url,amsmath,setspace,amssymb,amsthm,fullpage}
+\usepackage{algorithm,algorithmic}
+\usepackage{xcolor}
+\usepackage[colorlinks=true]{hyperref}
+\def\EE{\mathbb{E}}
+\def\PP{\mathbb{P}}
+\def\Pn{\mathbb{P}_n}
+\def\A{\mathcal{A}}
+% Scribe template modified from original created by UC Berkeley's EECS department
+
+\newcommand{\heading}[5]{
+  \renewcommand{\thepage}{#1-\arabic{page}}
+  \noindent
+  \begin{center}
+    \framebox[\textwidth]{
+      \begin{minipage}{0.9\textwidth} \onehalfspacing
+        {\bf STAT 234 -- Sequential Decision Making} \hfill #2
+
+        {\centering \Large #5
+
+        }\medskip
+
+        {\it #3 \hfill #4}
+      \end{minipage}
+    }
+  \end{center}
+}
+
+\newcommand{\scribe}[4]{\heading{#1}{#2}{Instructor:
+    Susan Murphy }{Scribe: #4}{Lecture #1: #3}}
+
+\input{macros}
+
+\bibliographystyle{alpha}
+
+\begin{document}
+\scribe{11}{Feb.~27, 2018}{Least-Squares Policy Iteration (cont.) + \\ Off-Policy Learning in RL}{Michael Ge}
+
+\textit{In this lecture, we conclude with our discussion on least-squares methods and begin our discussion on off-policy learning. In the least-squares section, we discuss least squares policy iteration and apply the methods to the HeartSteps study. In the off-policy section, we discuss importance sampling and doubly robust estimators for different RL problems.}
+\section{Control: Least-Square Policy Iteration (LSPI)}
+
+\subsection{Review: Policy Iteration}
+
+The problem we are trying to solve is to compute a $Q$ function $Q^{\pi_k}$ given a policy $\pi_k$ and improve it by defining a new policy $\pi_k$ to be the argmax. Policy iteration is a method of getting the optimal value function and finding the optimal policy for a given, known MDP. In deterministic policies, we use an iterative procedure with the idea being to approximate the optimal policy by a sequence of monotonically improving policies $\{\pi_1, \pi_2, \ldots, \pi_k\}$.
+
+Each iteration $k$ consists of two phases:
+\begin{enumerate}
+\item Policy Evaluation: compute $Q^{\pi_k}$ where $\pi_k$ is the current policy.
+\item Policy Improvement: greedily update the policy by the following:
+  $$\pi_{k+1}(s) = \argmax_{u \in \mathcal{A}} Q^{\pi_k}(s, a)$$
+
+  In this setting, the fundamental property is that $Q^{\pi_{k+1}}(s,a) \ge Q^{\pi_k}(s,a)$ for all $s, a$.
+\end{enumerate}
+
+\subsection{Approximate Policy Iteration}
+
+An issue to consider with this method is that we assume we do a good job of estimating the $Q$-function. Furthermore, this framework functions under a look-up table setting. Oftentimes, this might be an intractable learning strategy. In the least-squares setting, we will be doing approximate policy iteration. So what happens if we use an approximate value function instead of the actual value function?
+
+We now discuss approximate iterations of the $Q$ value function. That is, at each iterations $k=0, 1, 2, \ldots$, we first compute an approximate policy evaluation $\hat{Q}^{\pi_k}$ as an approximation of the value function $Q^{\pi_k}$ for the current policy $\pi_k$. We then improve our policy $\pi_{k+1}(s) = \argmax_{a \in \mathcal{A}} \hat{Q}^{\pi_k}(s,a)$.
+
+\textbf{Theorem (Lagoudakis and Parr)}: Under the assumption that $||\hat{Q}^{\pi_k} - Q^{\pi_k}||_\infty < \epsilon$ for $k = 1, 2, \ldots$, then the sequence of policies $\{\pi_1, \pi_2, \ldots\}$ produced by approximate policy iteration satisfies
+$$\limsup_{k \to \infty} ||Q^{\pi_k} - Q^\star||_\infty \leq \frac{4\gamma\epsilon}{(1 - \gamma)^2}$$
+
+This means that if we do a good job of approximating the $Q$ function (limit yields a small value), then the $Q$ function policy we're learning converges to the best $Q$ function. Note that the result of the theorem requires that $\gamma < 1$, so we're working in the discounted horizon setting.
+
+\subsection{Least-Squares Policy Iteration (LSPI)}
+
+LSPI is a batch, off-policy learning algorithm that functions without knowledge of the underlying MDP. The underlying framework behind this method is approximate policy iteration. The point in LSPI is to use LSTD to construct an estimate of the value function using the training data $\mathcal{D}$ in the approximate policy evaluation step.
+
+The following algorithm describes LSPI:
+
+\begin{algorithm}
+  \caption*{\textbf{input} training data $\mathcal{D}$, feature vector $\phi$, discount factor $\gamma$, stopping criterion $\delta$, initial weight $w_0$}
+  \begin{algorithmic}
+    \STATE \textbf{Initialize} $\epsilon > \delta, w' = w_0, \hat{b} = (1/n)\sum_{i=1}^n \phi(S_i, A_i)R_i$
+    \WHILE{$\epsilon > \delta$}
+    \STATE $w=w'$
+    \STATE $\pi(s) = \argmax_{a \in \mathcal{A}} \phi(s,a)^\top w$
+    \STATE $\hat{A} = (1/n) \sum_{i=1}^n \phi(S_i,A_i) (\phi(S_i, A_i) - \gamma \phi(S_i', \pi(S_i')))^\top$
+    \STATE $w' = \hat{A}^{-1}\hat{b}$
+    \STATE $\epsilon = ||w - w'||$
+    \ENDWHILE    
+  \end{algorithmic}
+  \textbf{output} $w'$
+\end{algorithm}
+
+\noindent $n$ is the number of examples $(S, A, R, S')$, $\hat{A}$ and $\hat{b}$ are the expressions from the LSTD section, $\phi$ is the feature vector, and $w$ is the parameterization of the $Q$-table. We calculate $\pi(s)$ to be the new policy and then evaluate the $A$ matrix using the new policy. Finally, we form weight estimates for $w'$ and repeat this process until convergence. Surprisingly, this method is relatively stable.
+
+\subsection{Illustration using HeartSteps}
+
+We now consider using least-squares methods in application to the HeartSteps study. The study tracked 37 users for 7492 examples ($(S,A,R,S')$ tuples). Note that this data is relatively small scale, even under a questionable Markov assumption.
+
+A state $S_t = (X_t, I_t), I_t \in \{0, 1\}$ where $I_t$ is the availability indicator and $X_t = (X_{t,j})_{j=1}^6 \in \reals^6$ is given by:
+
+\begin{enumerate}
+\item Day in study ranging from 0 to 41
+\item Other location indicator, 1 if location is unknown/not at home or work
+\item Log-transformed tracker steps 30 minutes prior to decision point
+\item Log-transformed phone steps 30 minutes prior to decision point
+\item Square root number of tracker steps yesterday
+\item Work location indicator
+\end{enumerate}
+
+There are some issues to consider with the features. The log-transformed tracker steps and log-transformed phone steps 30 minutes before the decision point are highly correlated over time, implying that the Markovian assumption is bad. The ``day in study'' feature also breaks the Markovian assumption since we can never return to the same state for a single individual. This is an issue since in this framework, we're always asserting that we can try multiple actions in the same state. All of the other variables are variables we can understand within people across time, however. Why did we conjecture that day in study even mattered? People get sick and tired of the study, so habituation/burden by the study needed to be considered as well. Finally, phone counts are often highly noisy and differ in performance based on where the phone is carried. The tracker also has flaws since people tended not to wear the tracker.
+
+The action $A_t$ is whether or not a tailored suggestion is sent. The action space is restricted: when a user is unavailable, we cannot send a message. That is, $\mathcal{A}(S_t) = \mathcal{A}(X_t, I_t = 0) = 0$ and $\mathcal{A}(X_t, I_t = 1) = \{0, 1\}$.
+
+Finally, the reward $R_{t+1}$ is the log-transformed tracker steps 30 minutes after the decision point.
+
+\subsection{Approximation to \texorpdfstring{$\boldsymbol{Q}$}{Q}-Function}
+
+We approximate the action-value function by $Q_w(S,A)$ for $S=(X,I), A\in \mathcal{A}(S)$:
+
+$$Q_w(S,A)=
+\begin{cases}
+  w_{1,0}+g(X)^\top w_{1,1} + w_{1,2}A+Af(X)^\top w_{1,3} & I=1 \\
+  w_{0,0}+g(X)^\top w_{0,1} & I=0 \\
+\end{cases}
+$$
+where $w=\{w_{1,0}, w_{1,1},w_{1,2},w_{1,3},w_{0,0},w_{0,1}\}$.
+
+An alternative way of writing the above is:
+$$(w_{1,0} + g(f(X)^\top w_{11})(1-A) + (w_{1,2} + f(X)^\top w_{1,3})A, \text{ for } I = 1$$
+
+$w_{1,2}A+Af(X)^\top w_{1,3}$ is the only part of the model that has an impact on the policy. This is the ``advantage'' modeling component. $w_{i,0}+g(X)^\top w_{i,1}$ for $i = \{0, 1\}$ model the baseline $Q$ function. Note that $i$ is the indicator of availability.
+
+Thus, $$Q_w(S,A)=\phi(S,A)^\top w$$ where $$\phi(S,A)=(\mathbbm{1}_{I=1},\mathbbm{1}_{I=1}g(X),\mathbbm{1}_{I=1}A,\mathbbm{1}_{I=1}Af(X),\mathbbm{1}_{I=0},\mathbbm{1}_{I=0}g(X))$$
+
+
+\subsection{LSPI Analyses}
+
+The features in $g(x)$ will be the features that predict step-count after a particular time point. The features in $f$ define the policy. We want to find a good proxy for ``days in study,'' which is a strong predictor of the reward. The use of this predictor limits the way that we can accumulate information. Recall that $x_1$ is day in study, $x_2$ is other location indicator, $x_3$ is log-transformed tracker steps 30 minutes prior.
+
+In the first LSPI analysis, $g(x) = (x_1, x_3)^\top$, and $f(x) = x_1$ where $x_1$ is the day in study feature and $x_3$ is the log-transformed tracker steps 30 minutes prior feature. In the second analysis, $g(x) = x^\top$ and $f(x) = x_1$. In the third analysis, $g(x) = x^\top$ and $f(x) = (x_1,x_2)$. The first and second policies are the same, but note that we're using different variables to reduce noise. With any reduction in noise, however, we increase degrees of freedom. Always consider the bias-variance trade-off. See the study for the results of different analyses. In short, at the beginning of the study it is worth pushing notification. But by the end of the study, pushing the notification does not work. The issue is that the reward we're using is not picking up delayed effects.
+
+\section{Off-Policy Learning in RL}
+
+Problem: we had to get a good approximation for $Q$. Is this a good thing to do? We were learning off-policy, which didn't force us to choose actions according to the policy we were trying to learn, but we had to approximate the $Q$ function. This section is about trying to get away from that issue: is it possible to get rid of approximating the state-action value function?
+
+\subsection{Batch Off-Policy Learning}
+
+We work in a standard finite-horizon MDP framework:
+
+\begin{itemize}
+\item Finite-horizon MDP,
+  $\langle \mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R}, T \rangle$
+  \begin{itemize}
+  \item $\mathcal{S}$ is the state space, $\mathcal{A}$ is the action space, $\mathcal{P}$ is the transition prob. function and  $\mathcal{R} : \mathcal{S} \times \mathcal{A} \times \mathcal{S}  \mapsto \reals$ is a reward  function:  
+    
+  \item $T$ is the finite, fixed time horizon. 
+    
+    
+  \end{itemize} 
+  
+\item  Policy $\pi$. For  $t = 1,\dots, T$,  
+  \begin{align*}
+    & Q_t^\pi(s, a)  = \mathbb{E}_\pi \left[\sum_{s=t}^{T} R_{s+1} \Big| S_{t} = s, A_t = a\right], \hbox{ action-value function}\\
+    & V_t^\pi(s)  = \sum_{a \in \mathcal{A}} \pi(a|s) Q_t^\pi(s, a), \hbox{ value function}
+  \end{align*}
+  
+\item (Recursive) Bellman Equation. Initialize with $Q_{T+1} = 0$, for $t = T, \dots, 1$,
+  \[
+    Q_t(s, a) = \mathbb{E}_\pi[R_{t+1}+Q_{t+1}(S_{t+1}, A_{t+1})|S_t=s, A_t=a], 
+  \]
+\end{itemize}
+
+Note that $T$ is fixed, so we have many trajectories each of $T$ units. In a fixed-horizon setting, the Q functions are indexed by $T$. There is no discount rate in fixed time settings. $Q_t$ is the action-value for starting at time $t$. 
+
+\subsection{Batch, Off-Policy Value Function}
+
+\begin{itemize}
+\item We consider the setting where the training dataset $\mathcal{D} = \{ \mathcal{D}_i\}_{i=1}^n$ consists of  $n$ i.i.d. trajectories.  
+  
+  \begin{itemize}
+  \item $\mathcal{D}_i = \{S_1^i, A_1^{i}, R_2^{i}, \dots, S_T^{i}, A_T^{i}, R_{T+1}^{i}, S_{T+1}^i\}$ is of length $T$
+    
+  \item The actions are selected according to a known policy $\pi_b$ (called behavioral policy).
+    
+    % \item Denote the distribution of the first state by $f_1$. 
+  \end{itemize}
+\item The goal is to estimate $v^\pi$, the value of a given target policy $\pi$ using the training data
+  \[
+    v^\pi = \mathbb{E}[V^\pi_1(S_1)] = \mathbb{E}_\pi\left[\sum_{t=1}^{T} R_{t+1}\right]
+  \]
+  \begin{itemize}
+  \item This is called an off-policy \textit{value} evaluation, in contrast to \textit{policy} evaluation. In the former the start state $S_1$ has a scientifically meaningful distribution, and one aims to estimate the value function, averaged across the start state distribution. In the latter, one aims to estimate the value function or action-state value function.
+  \end{itemize}
+\end{itemize}
+
+The goal is to estimate a $Q$ function under a particular new policy $\pi$. This is a scalar, since it's an average over the initial state distribution under policy $\pi$. The unknown is the start state, transition, and reward given the state-action distribution.
+
+Recall LSTD, which provides a batch off-policy estimator for the action-value function. This estimator is derived based on the Bellman Equation (using bootstrapping or temporal differences); function approximation is used when the state space $\mathcal{S}$ is large. Here we will mainly focus on a Monte-Carlo type approach to estimate the marginal quantity $v^\pi$ directly.
+
+\subsection{Importance Sampling Estimators}
+\begin{itemize}
+\item Notation: Denote the importance weight at time $t$ by $\rho_t = \frac{\pi(A_t|S_t)}{\pi_b(A_t|S_t)}$ and the cumulative importance weights  $\rho_{1:t} = \prod_{s=1}^{t}\rho_t$. Denote the observation history up to time $t$ by $$H_t = \{S_1, A_1, R_2, S_2, \dots, S_{t}, A_{t}, R_{t+1}, S_{t+1} \}$$
+  
+\item Standard result: $\EE_\pi[f(H_t)] = \EE[\rho_{1:t} f(H_t)]$ for any function $f$
+  
+\item Two simple IS estimators for $v^\pi = \EE_\pi\left[\sum_{t=1}^{T} R_{t+1}\right]$:
+  \begin{itemize}
+  \item Trajectory-wise version: $\hat v^{\pi} = \PP_n\left[\rho_{1:T} \sum_{t=1}^{T} R_{t+1}\right]$
+  \item Step-wise version: $\hat v^{\pi} = \PP_n\left[\sum_{t=1}^{T} \rho_{1:t} R_{t+1}\right]$			
+  \end{itemize}
+\item The step-wise version has smaller variance than the trajectory-wise one but could still suffer from high variance. 
+\end{itemize}
+
+Importance sampling estimators consist of the probability of choosing an action given a current behavior policy probability (denominator) and our objective policy (numerator), the distribution of the trajectory under policy $\pi$. This is a way to transfer between distributions underlying trajectories.
+
+The importance weight $\rho_t = \frac{\pi(A_t|S_t)}{\pi_b(A_t|S_t}$ can be thought of as the Radon-Nikodym derivative. Note that variance increases for big importance weights.
+
+\subsection{Doubly robust estimator for one time point}
+
+\begin{itemize}
+\item In the bandit case (i.e. $T = 1$), the value of a policy is simply given by $v^\pi = \EE_\pi[R] = \EE[\rho R]$ and the IS estimator is $\hat v^{\pi} = \Pn [\rho R]$.
+  
+\item Doubly Robust (DR) Estimator. For any given function $\tilde r(s, a)$, 
+  \begin{align*}
+    \hat v^{\pi} &= \Pn \left[\rho (R-\tilde r(S, A)) + \sum_{a \in \A} \pi(a|S) \tilde r(S, a) \right]\\
+                 &= \mathbb{P}_n\left[\rho R - {\color{blue}\left(\rho \tilde{r}(S,A)-\sum_{a \in \mathcal{A}}\pi(a|S)\tilde{r}(S,a)\right)}\right] \\
+                 &=\mathbb{P}_n\left[\sum_{a \in \mathcal{A}}\pi(a|S)\tilde{r}(S,a) + {\color{blue}\rho (R -  \tilde{r}(S,A))}\right]
+  \end{align*}
+\end{itemize}
+\begin{enumerate}
+\item Recover the IS estimator by setting $\tilde r= 0$. 
+  Unbiased for any choice of $\tilde r$ by noting
+  $\EE[\rho\ \tilde r(S,A)] = \EE[\EE[\rho\ \tilde r(S,A)|S]] = \EE\big[\sum_{a} \pi(a|S) \tilde r(S, a)\big]
+  $.
+  % \item 
+\item This is called doubly robust in statistics for the setting where $\pi_b$ is not known. In our setting ($\pi_b$ is known), this can be viewed as a trick for variance reduction (``control variates'').
+  
+\item Semi-parametric efficient if $\tilde r(s, a) = \EE[R|S=s, A=a]$. 
+\end{enumerate}
+
+
+The value of the policy is just the average reward; to switch policies, we use the $\rho$ importance weight. Our importance sampling estimators are just the sample average $\hat{v}^\pi = \mathbb{P}[\rho R]$.
+
+The sections in blue are known as the control variate. For a statistician, notice that the two terms in blue have same mean. If we take the mean of the whole expression, we would have $v^\pi$ and $0$ which seems to have no effect, but it turns out that by incorporating this term, variance is reduced.
+
+Most importantly, suppose we know $\tilde{r}$, but we have to estimate the behavior policy. Suppose we estimate and do a bad job. We still have the blue term having expectation 0 since we did a good job estimating reward given state and action $\tilde{r}$, R -- $\tilde{r}$ still has mean 0. This method is called doubly robust because it's robust to either estimator ($\rho$ or $\tilde{r}$) being bad.
+
+\subsection{Doubly Robust Estimator for Finite MDP}
+
+\begin{itemize}
+\item \cite{JiangLi2016} extend the bandit's DR estimator to the finite MDP case. We will first follow their derivations. 
+  
+\item Recall the step-wise IS estimator, $\hat v^{\pi} = \PP_n\big[\sum_{t=1}^{T} \rho_{1:t} R_{t+1}\big]$. 
+  
+\item A key observation. Suppose $T=3$ for now:
+  \begin{align*}
+    % & \PP_n\big[\sum_{t=1}^{3} \rho_{1:t} R_{t+1}\big] \\
+    \hat v^{\pi} & = \PP_n\big[\rho_1 R_2 + \rho_1 \rho_2 R_3 + \rho_1 \rho_2 \rho_3 R_4\big]\\
+      & = \PP_n\big[\rho_1 \left(R_2 +  \rho_2 R_3 +  \rho_2 \rho_3 R_4\right)\big] \\
+      & = \PP_n\big[\rho_1 \left(R_2 +  \rho_2 \left(R_3 +   \rho_3 R_4\right)\right) \big]
+  \end{align*}
+  \vspace{-3ex}
+  \begin{itemize}
+  \item Start with $\hat V_3 (S_3) = \rho_3 R_4$, define 
+    \[
+      \hat V_2(S_2) = \rho_2(R_3 + \hat V_3(S_3)), ~ \hat V_1(S_1) = \rho_1(R_2 + \hat V_2(S_2)).
+    \]
+    
+
+    
+  \item We have $\hat v_\pi = \Pn \hat V_1(S_1) =  \PP_n\big[\rho_1 \left(R_2 +  \rho_2 \left(R_3 +   \rho_3 R_4\right)\right) \big] $.
+  \end{itemize}
+\end{itemize}
+
+
+Using this method, we have avoided the need to get an accurate estimate of the $Q$-function. Rather, we just need to guess some estimator.
+
+Note that the iterative version of the step-wise importance weighting estimator would be:
+
+$$\hat{v}_\pi = \mathbb{P}_n \hat{V}_1(S_1)=\mathbb{P}_n\left[\rho_1\left(R_2+\hat{V}_2(S_2)\right)\right]$$
+
+\begin{itemize}
+\item For general $T$. Start with $\hat V_T (S_T) = \rho_{T} R_{T+1}$ and define 
+  \[
+    \hat V_t(S_t) = \rho_t(R_{t+1} + \hat V_{t+1}(S_{t+1})), ~t = T-1, \dots, 1
+  \]
+\item $\hat V_t(S_t)$ is a (one-sample) proxy of the value function evaluated at the current, observed state $S_t$, i.e. $$V_t^\pi(S_t) = \EE_\pi[R_{t+1}+V_{t+1}^\pi(S_{t+1})|S_t] = \EE[\rho_t (R_{t+1}+V_{t+1}^\pi(S_{t+1}))|S_t]$$ 
+  
+\item Motivated by the DR estimator for bandit, it intuitively makes sense to form the proxy by
+  \[
+    \hat V_t(S_t) = \sum_{a \in \A} \pi(a|S_t) \tilde Q_t(S_t, a) + \rho_t(R_{t+1} + \hat V_{t+1}(S_{t+1})-\tilde Q_t(S_t, A_t))
+  \]
+  where each $\tilde Q_t(s, a)$ is an arbitrary function.
+
+\item To be precise, given the functions $\{\tilde Q_t\}_{t=1}^T$, we start with 
+  \[
+    \hat V_T(S_T) = \sum_{a \in \A} \pi(a|S_T) \tilde Q_T(S_t, a) + \rho_t(R_{T+1} -\tilde Q_T(S_T, A_T))
+  \]
+  and for $t = (T-1), \dots, 1$ recursively define 
+  \[
+    \hat V_t(S_t) = \sum_{a \in \A} \pi(a|S_t) \tilde Q_t(S_t, a) + \rho_t(R_{t+1} + \hat V_{t+1}(S_{t+1})-\tilde Q_t(S_t, A_t))
+  \]
+\item Define the ``DR'' estimator as before: $\hat v^\pi = \Pn \hat V_1(S_1)$
+  
+\item It is easy to verify the recursive formulation of $\hat v^\pi$ is equivalent with 
+  \begin{align*}
+    \hat v^\pi = \Pn \sum_{t=1}^{T} \rho_{1:t-1} \left(\sum_{a \in \A} \pi(a|S_t) \tilde Q_t(S_t, a) + \rho_t(R_{t+1} -\tilde Q_t(S_t, A_t))\right)
+  \end{align*}
+  
+\item This is the same DR estimator developed in Murphy 2001 for the general (i.e. non-Markovian) finite-horizon setting by starting with the step-wise IS estimator and subtract by the projection onto score function of actions).
+  
+\item Semi-parametric efficient when $\tilde Q_t = Q^\pi_t$.
+  
+\item In practice, we can plug in an estimate of the value function $Q^\pi_t$ to form $\tilde Q_t$. The value function can be estimated by a series of regressions or by solving the Bellman equation based on the estimated MDP.
+\end{itemize}
+
+
+\subsection{Extensions}
+\begin{itemize}
+		\item In practice, a variant of IS called weighted importance sampling (WIS) tends to have a smaller MSE than the IS method (biased in finite sample but of smaller variance).
+		\begin{itemize}
+			\item Define $w_t = \PP_n \rho_{1:t}$, the empirical average of importance weight ratios.  Note that we have $\EE[w_t] = 1$
+			\item Trajectory-wise version of WIS: $\hat v^\pi = \frac{1}{w_T} \PP_n[\rho_{1:T} \sum_{t=1}^{T} R_{t+1}]$.
+			
+			\item Step-wise version of WIS: $\hat v^{\pi} = \sum_{t=1}^{T} \frac{1}{w_t}\PP_n\left[ \rho_{1:t} R_{t+1}\right]$.	
+		
+		\end{itemize}
+		 
+		 \item \cite{thomas2016data} proposed a weighted doubly robust (WDR) estimator. 
+		 \begin{itemize}
+		 	\item Just replace each $\rho_{1:t}^i$ by $\rho_{1:t}^i/w_t$ in the DR estimator as above. 
+		 	\item  Empirically outperforms the unweighted DR. 
+		 \end{itemize}
+               \end{itemize}
+               
+\bibliography{stat234}
+\end{document}

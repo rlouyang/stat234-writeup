@@ -1,0 +1,130 @@
+\documentclass[11pt]{article}
+\usepackage{final_project}
+
+\usepackage[utf8]{inputenc}
+% \doublespacing
+
+\title{Project Proposal: Comparing Methods of State Space Reduction}
+\author{Michael Ge, Richard Ouyang}
+\date{February 20, 2018}
+
+\begin{document}
+
+$\pm \texttt{x\_threshold}$ is the threshold past which you fail, so twice the threshold is the world width
+
+\url{https://github.com/openai/gym/pull/930} error in master branch
+
+important issue: \url{https://github.com/openai/gym/issues/100}
+
+instead of plotting average reward of the past x iterations, plot the policy's estimated action-value function Q (section 5.1 of Minh et al.)
+
+need to make it a point to explain why we didn't use the angle instead of the reward
+
+\maketitle
+
+\section{Motivation}
+
+Current reinforcement learning techniques have shifted toward computational as opposed to statistical methods. As a result, deep reinforcement learning and other black-box strategies have become popular approaches to solving complex RL problems. As novices in the RL field, we would like to take this final project as an opportunity to closely examine this state-of-the-art technology not only in terms of its ability to learn a task, but also by questioning the extent to which deep learning solves typical machine learning problems in the context of RL.
+
+\section{Problem Description}
+
+A major concern in reinforcement learning is the exponential growth in state space size by the number of features. To combat this, researchers have considered ways of defining importance metrics of their state features, allowing features to be dropped. As a result, high-dimensional problems become tractable, allowing us to quickly learn a good solution, but the models potentially lose valuable information in solving the problem, yielding suboptimality.
+
+Deep learning has also contributed to the prioritization of state features. Based on the change in layer dimensionality, deep learning performs a projection to smaller spaces, again prioritizing certain features over others.
+
+\section{Project Objective}
+
+In our project, we would like to create a comparison between deep reinforcement learning (DRL) techniques and standard Q-Learning methods. We hope to better elucidate to what extent deep learning is necessary or overfitting for the proposed problem. To better align with our dreams of starting a deep learning self-driving car start-up, we will be using the \texttt{CarRacing-v0} OpenAI game \cite{brockman2016openai} to experiment with our different models.
+
+\section{Proposed Solutions}
+
+We will perform PCA with varying levels of reduction and see how this affects learning rate or learning effectiveness. We can also try to reduce the state space by explicitly learning which aspects of the state are the most important and keeping only those. We can do this with state-reward correlation \cite{kishima2013reduction}.
+
+We will try to Q-learn with a neural net in PyTorch \cite{paszke2017pytorch} or TensorFlow. Both PCA and neural nets reduce the input into more manageable sizes, but performing PCA before neural nets can reduce the number of weights that need to be learned and thus increase learning rate 
+% (\href{https://stats.stackexchange.com/questions/67986/does-neural-networks-based-classification-need-a-dimension-reduction}{PCA and NNs})
+. We may possibly also do tabular Q-learning, like in \cite{curran2015using} (``We use a $Q(\lambda)$-learner with a tabular state representation and $\alpha=0.01$, $\lambda=0.5$, $\gamma=0.9$ and $\epsilon=0.05$''), as a control.
+
+% LOL what if we just tried different neural net sizes/layers?
+
+\section{Experimental Approach}
+
+% We assume normal data (can expand to other types of data)
+
+% Types of state space data:
+
+% real numbered (normal, expo)
+% binary
+% ordinal
+% combinations of above
+
+% types of actions:
+
+% binary?
+% maybe uniform or something
+
+% types of rewards: 
+
+% how do the rewards come from the state and action?
+% some kind of noisy, complicated distribution
+% add some hierarchy
+
+There will be several major components in terms of developing the framework to test and run our experiments.
+
+\begin{enumerate}
+\item connect to OpenAI (be able to use their games)
+\item PyTorch: we'd like to learn a new up-and-coming machine learning library, PyTorch, as part of the investigation process.
+\item Build up prerequisite knowledge about Convolutional Neural Networks: Understand what theory there is behind CNNs and how to best process images using them.
+\item Build deep neural nets and connect them to the OpenAI games: learn how PyTorch implements neural networks
+\item write PCA code, and incorporate it into the original learning
+\item write tabular Q-learning baseline model for comparison
+\end{enumerate}
+
+We'll test our methods on some games with a range of state spaces from \href{https://gym.openai.com/docs/}{OpenAI Gym} (toy games, Box2D, Atari?) \cite{brockman2016openai} or \href{https://github.com/mgbellemare/Arcade-Learning-Environment}{Arcade Learning Environment}. In this setting, the state spaces will be the pixel values of each image. We expect that the state space dimensionality will be computationally expensive to use, but we do have access to Odyssey, the SEAS computing cluster, to do high-performance work for us.
+
+Here's the description of \texttt{CarRacing-v0}:
+\begin{quote}
+Easiest continuous control task to learn from pixels, a top-down racing environment. Discreet control is reasonable in this environment as well, on/off discretisation is fine. State consists of 96x96 pixels. Reward is -0.1 every frame and +1000/N for every track tile visited, where N is the total number of tiles in track. For example, if you have finished in 732 frames, your reward is 1000 - 0.1*732 = 926.8 points. Episode finishes when all tiles are visited. Some indicators shown at the bottom of the window and the state RGB buffer. From left to right: true speed, four ABS sensors, steering wheel position, gyroscope.   
+\end{quote}
+
+
+We'll start by randomly selecting actions to gather data. We will PCA the state space using this sample. Then, while learning, we'll take in the state $s$, transform it using the PCA from before, and proceed to deep Q-learn on the states and actions as normal. 
+
+\section{Evaluation}
+
+We want to look at learning rate, how long it takes to learn adequately, and how much it learns in a fixed period of time. We'll compare these values for different sizes of the reduced state space as well as the full state space. 
+
+
+% \section{For Funsies}
+
+% We saw that no one has really tried to do a 3D cart-pole problem, so we thought it might be fun to do it
+
+% \section{Hierarchical Machines}
+% \begin{itemize}
+%     \item ~\cite{parr1998reinforcement}
+% \end{itemize}
+
+
+% \section{PCA Reduction}
+
+% \section{Sensor Selection}
+% \begin{itemize}
+%     \item Selecting observations with the highest variance might not be what we'd like
+%     \item We might prefer to identify the most important state features and learn from those accordingly
+%     \item Kishima ~\cite{6492469} shows that such a model is successful in identifying sensors that have a high correlation with reward. When conditions in the environment change, these correlations are quick to adapt.
+%     \item In this setting, the state space doesn't ignore features as in PCA. Rather, it ranks the importance of each feature and makes decisions based on the most important ones.
+% \end{itemize}
+
+\bibliography{finalproj}{}
+% \bibliography{project}{}
+\bibliographystyle{plain}
+
+\href{http://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html}{PyTorch Deep Q-Learning}, \href{https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0}{RL with TensorFlow}
+
+\href{https://github.com/openai/gym/issues/100}{Important fix for CarRacing-v0 bug}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
