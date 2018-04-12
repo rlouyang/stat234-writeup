@@ -114,11 +114,11 @@ OpenAI Gym \cite{brockman2016openai} offers a set of many standard games on whic
 \foreach \game in {CartPole, Acrobot, MountainCar}
 {
     \subfloat[Sample original image of the \game~game screen. \label{subfig:\game_original}]{%
-        \includegraphics[width=0.35\textwidth]{final_project/game_images/\game_original.pdf}
+        \includegraphics[width=0.35\textwidth]{game_images/\game_original.pdf}
     }
     \hfill
     \subfloat[Sample processed image of the \game~game screen.\label{subfig:\game_processed}]{%
-        \includegraphics[width=0.35\textwidth]{final_project/game_images/\game_processed.pdf}
+        \includegraphics[width=0.35\textwidth]{game_images/\game_processed.pdf}
     }
 }
 \caption{Original and processed images from the three games discussed in this paper. The processed images were created by grayscaling the original images and resizing from $600 \times 400$ pixels to $80 \times 80$ pixels. The resulting feature space is then $\mathbb{R}^{6400}$.}
@@ -145,7 +145,8 @@ In this project, our goal was to learn the optimal policy for the games without 
 
 At each time step, we obtained the RGB (color) mapping of the game screen, resized the image to $80 \times 80$ pixels (rectangular images were squashed into a square), and converted the image to grayscale. We then took the difference between the current timestep's image and the last timestep's image as the state to input into our DQN. 
 
-\subsection{Network Structure}
+\subsection{Model Structure}
+\label{subsec:model_structure}
 
 In our experiments, we used four different types of models, each of which includes the original and double network variants: 
 
@@ -170,27 +171,29 @@ For the (D)DQCNN\_PCA\_Mini model, we kept the rough network structure the same 
 We tested many configurations of hyperparameters, varying the following: 
 
 \begin{description}
-    \item[Model] One of several DQN and DDQN models. In addition to the conventional grayscale grayscale versions, a PCA version, a convolutional PCA version, and a mini convolutional PCA version of both the DQN and the DDQN are available.
+    \item[Model] One of the Q-function models mentioned in Section \ref{subsec:model_structure}.
     
-    \item[Frame skip] The number of time steps for which the same action is repeated. Typically set to $k = 3$.
+    \item[Frame skip] The number of time steps for which the same action is repeated. To speed up learning, we used this method described in \cite{mnih2013playing, mnih2015human}. When an action is selected, that action is repeated for the next $k$ frames, since selecting an action and training takes much more time than rendering an additional step of the game. We chose $k = 3$ since $k = 4$, which was suggested in \cite{mnih2013playing, mnih2015human}, empirically performed worse in \cp. 
     
-    \item[Update frequency] The number of action selections between each minibatch update. Typically set to $4$.
+    \item[Update frequency] The number of distinct action selections between each minibatch update. This value is typically set to $4$. This technique speeds up the training even further, since rendering the environment is far less costly than forwarding through the network. This has been used in other papers \cite{mnih2013playing, mnih2015human, van2016deep}.
     
-    \item[Number of minibatch training steps] The length of time the model should be trained, expressed in terms of the number of minibatch training steps. Typically between $10000$ and $100000$.
+    \item[Number of minibatch training steps] The length of time the model should be trained, expressed in terms of the number of minibatch training steps. While state-of-the-art research uses up to 10 million frames, our resources restrict us to values between 10 thousand and 100 thousand.
     
-    \item[Replay memory size] The maximum number of transitions -- each of which is an $(s, a, r, s')$ tuple -- stored in the replay memory.
+    \item[Replay memory size] The maximum number of transitions -- each of which is a $(s, a, r, s')$ tuple -- stored in the replay memory. The replay memory is used to reduce correlation between transitions used in each minibatch update \cite{mnih2013playing, mnih2015human}.
     
-    \item[Target update] If the model uses a target network, the number of trains between each target network update. Each update involves setting the target network parameters to the main network parameters.
+    \item[Target update] If the model uses a target network \cite{mnih2015human}, this represents the number of trains between each target network update. Each update involves setting the target network parameters to the main network parameters.
     
     \item[Learning rate] The (initial) learning rate used by the optimizer. A higher rate results in a model that learns faster but may diverge.
     
-    \item[Learning rate annealing] Whether the learning rate is annealed to a smaller value. In our experiments, the learning rate was slowly annealed to a final learning rate of $0.0005$.
+    \item[Learning rate annealing] Whether the learning rate is annealed to a smaller value. Learning rate annealing helps decrease the likelihood of policy divergence. The learning rate anneals according to the equation $$\alpha_t = \alpha_\text{initial} \max\left(\exp\left(-\frac{t}{\lambda}\right), \frac{0.0005}{\alpha_\text{initial}}\right),$$ where $t$ is the number of minibatch training updates that have already occurred, and $\lambda$ is the decay rate, so that the learning rate anneals exponentially from its initial value to a final value of $0.0005$.
     
-    \item[Batch size] The minibatch size, or the number of transitions used in each training step. The two values tested were $32$ and $128$.
+    \item[Batch size] The minibatch size, or the number of transitions used in each training update. The two values tested were $32$ and $128$.
     
-    \item[Loss function] The loss function used in the model. The Huber loss and the MSE loss were the two loss functions used.
+    \item[Loss function] The loss function used in the model. The Huber loss (defined as the $\ell_2$ norm for losses greated than 1 and the $\ell_1$ norm otherwise) and the mean squared error (MSE) loss were the two loss functions considered.
     
-    \item[Regularization] The weight decay in the optimizer. This value typically ranges from $0$ to $1$.
+    \item[Regularization] The weight decay in the optimizer. This value typically ranges from $0$ to $1$. This value is used to prevent overfitting in our networks.
+    
+    \item[Agent action selection] We used an $\epsilon$-greedy agent, annealing $\epsilon$ from $\epsilon_\text{initial} = 1$ to $\epsilon_\text{final} = 0.1$ according to the equation $$\epsilon_t = \epsilon_\text{final} + (\epsilon_\text{initial} - \epsilon_\text{final}) \exp\left(-\frac{t}{\lambda}\right),$$ where $t$ is the number of times the agent has already selected an action, and $\lambda$ is the decay rate. 
 \end{description}
 
 We performed several grid searches to find hyperparameters that worked for all three games. (we found that CartPole preferred a larger learning rate)
@@ -222,11 +225,6 @@ Our final hyperparameters, used in the rest of the paper, are available in Table
 
 We initially began with a learning rate of $0.1$, but this was far too large: CartPole would learn to durations of around 200 time steps within a few dozen iterations but would quickly diverge. The other two games also did not converge. Significant improvements occurred after reducing to a learning rate of about $0.001$. Although \cite{mnih2013playing, mnih2015human} used a learning rate of $0.00025$, we found that learning was far too slow for our purposes and instead opted for a larger learning rate. 
 
-Recognizing that our larger learning rate might ultimately lead to divergence, we decided to implement learning rate annealing. The learning rate anneals according to the equation $$\alpha_t = \alpha_\text{initial} \max\left(\exp\left(-\frac{t}{10000}\right), \frac{0.0005}{\alpha_\text{initial}}\right),$$ where $t$ is the number of minibatch training updates that have already occurred, so that the learning rate anneals exponentially from its initial value to a final value of $0.0005$.
-
-We used an $\epsilon$-greedy agent, annealing $\epsilon$ from $\epsilon_\text{initial} = 1$ to $\epsilon_\text{final} = 0.1$ according to the equation $$\epsilon_t = \epsilon_\text{final} + (\epsilon_\text{initial} - \epsilon_\text{final}) \exp\left(-\frac{t}{\lambda}\right),$$ where $t$ is the number of times the agent has already selected an action, and $\lambda = 200$ is the decay rate. Each batch consisted of $128$ transitions, each of which is a tuple containing $(s, a, r, s')$. 
-
-To speed up learning, we used a frame-skipping method described in \cite{mnih2013playing, mnih2015human}. When an action is selected, that action is repeated for the next $k$ frames, since selecting an action and training takes much more time than rendering an additional step of the game. We chose $k = 3$ since $k = 4$, which was suggested in \cite{mnih2013playing, mnih2015human}, resulted in an extremely wobbly cart in the CartPole game. We also updated the network only once every $4$ action selections, speeding up the training even further. 
 
 \subsection{PCA Models}
 
@@ -242,11 +240,11 @@ We did not have access to GPUs, which significantly speed up learning. We also h
 \foreach \game in {CartPole, Acrobot, MountainCar}
 {
     \subfloat[Rewards for a random policy in the \game~game. \label{subfig:\game_NoTraining_Random_rewards}]{%
-        \includegraphics[width=0.45\textwidth]{final_project/\game/\game_NoTraining_Random_rewards.pdf}
+        \includegraphics[width=0.45\textwidth]{\game/\game_NoTraining_Random_rewards.pdf}
     }
     \hfill
     \subfloat[Durations for a random policy in the \game~game.\label{subfig:\game_NoTraining_Random_durations}]{%
-        \includegraphics[width=0.45\textwidth]{final_project/\game/\game_NoTraining_Random_durations.pdf}
+        \includegraphics[width=0.45\textwidth]{\game/\game_NoTraining_Random_durations.pdf}
     }
 }
 \caption{Baseline results from several classic control games from OpenAI Gym under a random policy and model.}
@@ -285,11 +283,11 @@ Target network is bad etc.
 \foreach \game in {CartPole, Acrobot, MountainCar}
 {
     \subfloat[Rewards for a DQN policy in the \game~game with $\texttt{lr}=0.001$, RMSProp optimizer, Huber Loss. \label{subfig:\game_DQN_GS_EpsilonGreedy_rewards}]{%
-        \includegraphics[width=0.45\textwidth]{final_project/\game/\game_DQN_GS_EpsilonGreedy_rewards.pdf}
+        \includegraphics[width=0.45\textwidth]{\game/\game_DQN_GS_EpsilonGreedy_rewards.pdf}
     }
     \hfill
     \subfloat[Durations for a DQN policy in the \game~game with $\texttt{lr}=0.001$, RMSProp optimizer, Huber Loss. \label{subfig:\game_DQN_GS_EpsilonGreedy_durations}]{%
-        \includegraphics[width=0.45\textwidth]{final_project/\game/\game_DQN_GS_EpsilonGreedy_rewards.pdf}
+        \includegraphics[width=0.45\textwidth]{\game/\game_DQN_GS_EpsilonGreedy_rewards.pdf}
     }
 }
 \caption{DQN Results from several classic control games from OpenAI Gym under the $\epsilon$-greedy policy and DQN model.}

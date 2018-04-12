@@ -17,7 +17,6 @@
 \usepackage{minted}
 \usemintedstyle{manni}
 
-\usepackage[framemethod=TikZ]{mdframed}
 \pagestyle{fancy}
 \lhead{STAT 234}
 \rhead{Michael Ge, Richard Ouyang}
@@ -152,36 +151,21 @@
 \def\argmin{\operatornamewithlimits{arg\,min}}
 
 \newcommand{\given}{\,|\,}
-
-\mdfdefinestyle{solutionstyle}{
-    linecolor=black,
-    linewidth=2pt,
-    roundcorner=10pt,
-    backgroundcolor=lightgray,
-    innerbottommargin=10pt,
-}
-
-\newenvironment{solution}
-    {\begin{mdframed}[style=solutionstyle, frametitle={Solution.}]
-    }
-    {     
-    \end{mdframed}
-    }
     
-\newmintedfile[R]{R}{
-    frame=lines,
-    framesep=2mm,
-    breaklines,
-    linenos, xleftmargin=16pt,
-} 
+% \newmintedfile[R]{R}{
+%     frame=lines,
+%     framesep=2mm,
+%     breaklines,
+%     linenos, xleftmargin=16pt,
+% } 
         
-\newminted{R}{
-    frame=lines,
-    framesep=2mm,
-    breaklines,
-    % linenos, xleftmargin=16pt
-}
-\AtBeginEnvironment{minted}{\singlespacing}
+% \newminted{R}{
+%     frame=lines,
+%     framesep=2mm,
+%     breaklines,
+%     % linenos, xleftmargin=16pt
+% }
+% \AtBeginEnvironment{minted}{\singlespacing}
         
 \newcommand{\graphics}[2]{
     \begin{center}
