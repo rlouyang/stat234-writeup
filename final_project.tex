@@ -100,6 +100,8 @@ Principal component analysis (PCA) is a dimensionality reduction technique that 
 
 PCA works as follows: \todo{maybe math}
 
+\cite{kishima2013reduction} tried a version of this
+
 \subsection{OpenAI Gym}
 
 OpenAI Gym \cite{brockman2016openai} offers a set of many standard games on which to test reinforcement learning algorithms. We tested our algorithms, which learn on pixel images, on the following games. See Figure \ref{fig:game_images} for sample images of each game.
@@ -145,7 +147,7 @@ In this project, our goal was to learn the optimal policy for the games without 
 
 At each time step, we obtained the RGB (color) mapping of the game screen, resized the image to $80 \times 80$ pixels (rectangular images were squashed into a square), and converted the image to grayscale. We then took the difference between the current timestep's image and the last timestep's image as the state to input into our DQN. 
 
-\subsection{Model Structure}
+\subsection{Model Structures}
 \label{subsec:model_structure}
 
 In our experiments, we used four different types of models, each of which includes the original and double network variants: 
@@ -153,18 +155,18 @@ In our experiments, we used four different types of models, each of which includ
 \begin{description}
     \item[(D)DQCNN] The original model \cite{mnih2013playing, mnih2015human} and variants \cite{van2016deep}. These models convolve images using no extra state-space reduction techniques like PCA.
     
-    \item[(D)DQN\_PCA] These models use a database of 1000 states as training data for PCA and project the pixel features of new states onto the subspace that captures 99\% of the variance. The results is a one-dimensional vector with varying lengths based on the game (100 to 500 features). This vector is passed into a conventional (not convolutional) deep neural network to predict the Q-value.
+    \item[(D)DQN-PCA] These models use a database of 1000 states as training data for PCA and project the pixel features of new states onto the subspace that captures 99\% of the variance. The results is a one-dimensional vector with varying lengths based on the game (100 to 500 features). This vector is passed into a conventional (not convolutional) deep neural network to predict the Q-value.
     
-    \item[(D)DQCNN\_PCA] These models perform PCA as above, but inverts the PCA transformation in order to convert each image back to its original space. The result is again an $80 \times 80$ image, which is then input into a model with the same network structure as the original (D)DQN.
+    \item[(D)DQCNN-PCA] These models perform PCA as above, but inverts the PCA transformation in order to convert each image back to its original space. The result is again an $80 \times 80$ image, which is then input into a model with the same network structure as the original (D)DQN.
     
-    \item[(D)DQCNN\_PCA\_Mini] Out of curiosity, we included one additional model, which takes the one-dimensional vector obtained from the PCA transformation and reshapes it into a square (zero padding if necessary). We then convolved the resulting ``image'' through a smaller neural network to predict the Q-value for each state. Although PCA strips correlation between nearby pixels, we were interested in investigating whether the reduced dimensionality preserved some structure between nearby values.
+    \item[(D)DQCNN-PCA-Mini] Out of curiosity, we included one additional model, which takes the one-dimensional vector obtained from the PCA transformation and reshapes it into a square (zero padding if necessary). We then convolved the resulting ``image'' through a smaller neural network to predict the Q-value for each state. Although PCA strips correlation between nearby pixels, we were interested in investigating whether the reduced dimensionality preserved some structure between nearby values.
 \end{description}
 
-For the (D)DQCNN and (D)DQCNN\_PCA models, we kept our network structure similar to \cite{mnih2013playing} and \cite{mnih2015human} by using three hidden layers in each network. These DQNs take in an $80 \times 80$ grayscale image. Each hidden layer in the network convolves the previous layer's output into multiple filters, followed by a batch normalization and a leaky ReLU with $\alpha = 0.001$ to prevent dead nodes. The first layer convolves $8$ $8 \times 8$ filters with stride $4$; the second layer convolves $16$ $4 \times 4$ filters with stride $2$; the final hidden layer convolves $16$ $4 \times 4$ filters, this time with stride $1$. A max pooling with kernel size $2$ is then applied to reduce the dimensionality of the output. The final layer is fully connected and maps linearly to the number of actions available. For instance, since \cp contains two actions at any time, the output of the neural network contains two nodes. This structure saves time when forwarding through the network, since a single forward pass for a given state $s$ gives $\hat{Q}_\text{network}(s, a)$ for all $a \in \mathcal{A}$.
+For the (D)DQCNN and (D)DQCNN-PCA models, we kept our network structure similar to \cite{mnih2013playing} and \cite{mnih2015human} by using three hidden layers in each network. These DQNs take in an $80 \times 80$ grayscale image. Each hidden layer in the network convolves the previous layer's output into multiple filters, followed by a batch normalization and a leaky ReLU with $\alpha = 0.001$ to prevent dead nodes. The first layer convolves $8$ $8 \times 8$ filters with stride $4$; the second layer convolves $16$ $4 \times 4$ filters with stride $2$; the final hidden layer convolves $16$ $4 \times 4$ filters, this time with stride $1$. A max pooling with kernel size $2$ is then applied to reduce the dimensionality of the output. The final layer is fully connected and maps linearly to the number of actions available. For instance, since \cp contains two actions at any time, the output of the neural network contains two nodes. This structure saves time when forwarding through the network, since a single forward pass for a given state $s$ gives $\hat{Q}_\text{network}(s, a)$ for all $a \in \mathcal{A}$.
 
-To keep the models relatively similar in size, we kept the number of parameters for each model as close as possible. For the (D)DQN\_PCA model, we tried a variety of network architectures, varying the number of layers as well as the number of nodes in each layer. 
+To keep the models relatively similar in size, we kept the number of parameters for each model as close as possible. For the (D)DQN-PCA model, we tried a variety of network architectures, varying the number of layers as well as the number of nodes in each layer. 
 
-For the (D)DQCNN\_PCA\_Mini model, we kept the rough network structure the same as our original models. However, to account for the smaller image size, we reduced the kernel size to 4 and the stride to 1 for all layers.
+For the (D)DQCNN-PCA-Mini model, we kept the rough network structure the same as our original models. However, to account for the smaller image size, we reduced the kernel size to 4 and the stride to 1 for all layers.
 
 \subsection{Hyperparameters}
 
@@ -185,7 +187,7 @@ We tested many configurations of hyperparameters, varying the following:
     
     \item[Learning rate] The (initial) learning rate used by the optimizer. A higher rate results in a model that learns faster but may diverge.
     
-    \item[Learning rate annealing] Whether the learning rate is annealed to a smaller value. Learning rate annealing helps decrease the likelihood of policy divergence. The learning rate anneals according to the equation $$\alpha_t = \alpha_\text{initial} \max\left(\exp\left(-\frac{t}{\lambda}\right), \frac{0.0005}{\alpha_\text{initial}}\right),$$ where $t$ is the number of minibatch training updates that have already occurred, and $\lambda$ is the decay rate, so that the learning rate anneals exponentially from its initial value to a final value of $0.0005$.
+    \item[Learning rate annealing] Whether the learning rate is annealed to a smaller value. Learning rate annealing helps decrease the likelihood of policy divergence. The learning rate anneals according to the equation $$\alpha_t = \alpha_\text{initial} \max\left(\exp\left(-\frac{t}{\lambda_\alpha}\right), \frac{0.0005}{\alpha_\text{initial}}\right),$$ where $t$ is the number of minibatch training updates that have already occurred, and $\lambda$ is the decay rate, so that the learning rate anneals exponentially from its initial value to a final value of $0.0005$.
     
     \item[Batch size] The minibatch size, or the number of transitions used in each training update. The two values tested were $32$ and $128$.
     
@@ -193,11 +195,8 @@ We tested many configurations of hyperparameters, varying the following:
     
     \item[Regularization] The weight decay in the optimizer. This value typically ranges from $0$ to $1$. This value is used to prevent overfitting in our networks.
     
-    \item[Agent action selection] We used an $\epsilon$-greedy agent, annealing $\epsilon$ from $\epsilon_\text{initial} = 1$ to $\epsilon_\text{final} = 0.1$ according to the equation $$\epsilon_t = \epsilon_\text{final} + (\epsilon_\text{initial} - \epsilon_\text{final}) \exp\left(-\frac{t}{\lambda}\right),$$ where $t$ is the number of times the agent has already selected an action, and $\lambda$ is the decay rate. 
+    \item[Agent action selection] We used an $\epsilon$-greedy agent, annealing $\epsilon$ from $\epsilon_\text{initial} = 1$ to $\epsilon_\text{final} = 0.1$ according to the equation $$\epsilon_t = \epsilon_\text{final} + (\epsilon_\text{initial} - \epsilon_\text{final}) \exp\left(-\frac{t}{\lambda_\epsilon}\right),$$ where $t$ is the number of times the agent has already selected an action, and $\lambda$ is the decay rate. 
 \end{description}
-
-We performed several grid searches to find hyperparameters that worked for all three games. (we found that CartPole preferred a larger learning rate)
-\todo{add more hyperparameters}
 
 Our final hyperparameters, used in the rest of the paper, are available in Table \ref{tab:grid_search_hyperparameters}.
 
@@ -219,22 +218,41 @@ Our final hyperparameters, used in the rest of the paper, are available in Table
         Regularization & $0.1$ \\
         \bottomrule
     \end{tabular}
-    \caption{The hyperparameters found by grid search and used for the PCA variants of the DQN.}
+    \caption{The hyperparameters found by our grid search and used for the PCA variants of the (D)DQN.}
     \label{tab:grid_search_hyperparameters}
 \end{table}
 
-We initially began with a learning rate of $0.1$, but this was far too large: CartPole would learn to durations of around 200 time steps within a few dozen iterations but would quickly diverge. The other two games also did not converge. Significant improvements occurred after reducing to a learning rate of about $0.001$. Although \cite{mnih2013playing, mnih2015human} used a learning rate of $0.00025$, we found that learning was far too slow for our purposes and instead opted for a larger learning rate. 
-
-
-\subsection{PCA Models}
-
 \subsection{Implementation Details}
 
-We did not have access to GPUs, which significantly speed up learning. We also had limited time to run our learning.
+\subsubsection{Model Implementation}
+
+The code is structured such that the user can pass a model, agent, game, and a large selection of hyperparameters into \texttt{main.py}. During the script execution, statistics are logged for later analysis. 
+
+Within our \path{utils/} folder, we implemented several scripts to aid in the data analysis process, some of which we will briefly discuss here. 
+
+\begin{itemize}
+    \item \texttt{Logger.py} is a general logging utility for storing statistics in files. 
+    \item \texttt{PCA.py} contains a PCA class whose objects can train on inputs of states, return the transformed features, and invert already-transformed features back into the original image space. 
+    \item \texttt{ReplayMemory.py} contains a class that stores and quickly samples transitions for minibatch updates. 
+    \item \path{get_notes_and_stats.py} parses our raw data into an easy-to-read format, providing summary statistics, hyperparameters, and metadata about each job. 
+    \item \path{plot_data.py} plots raw data as well as running means over episodes and training updates. 
+    \item \path{save_states.py} runs a random policy for each game, saving a large set of states on which PCA can later be performed. 
+\end{itemize}
+ 
+Our \path{automate_run} folder contains the following bash scripts for running jobs on the computing cluster:
+
+\begin{itemize}
+    \item \path{gen_slurms.sh} and \path{search_nets.sh} iterate over a given hyperparameter space and submit batch jobs for each hyperparameter combination in parallel.
+    \item \path{view_plots.sh} is a utility that allows the user to view the rewards of each game, providing a preliminary categorization of model performance. 
+\end{itemize}
+
+Although we did have access to a computing cluster, we did not have access to GPUs, which significantly speed up learning for neural networks. We also had limited time to run our experiments, preventing us from running the 10 million frames per game prescribed in the literature \cite{mnih2013playing, mnih2015human}. This was the motivation for our efforts to improve learning by reducing the state space.
 
 \section{Results}
 
 \subsection{Random Policy}
+
+As a baseline, we ran a random policy on each game. The average rewards and durations for the three games are available in Table \ref{tab:random_rewards}.
 
 \begin{figure}[!ht]
 \foreach \game in {CartPole, Acrobot, MountainCar}
@@ -251,8 +269,6 @@ We did not have access to GPUs, which significantly speed up learning. We also h
 \label{fig:random}
 \end{figure}
 
-The average rewards and durations for the three games are available in Table \ref{tab:random_rewards}.
-
 \begin{table}[!htbp]
     \centering
     \begin{tabular}{c|cc}
@@ -267,7 +283,23 @@ The average rewards and durations for the three games are available in Table \re
     \label{tab:random_rewards}
 \end{table}
 
+% \subsection{Initial Exploration}
+
+% Although \cite{mnih2013playing, mnih2015human} used a learning rate of $0.00025$, we found that learning was far too slow for our purposes and instead opted for a larger learning rate. We began with a learning rate of $0.1$, but this was far too large: CartPole would learn to durations of around 200 time steps within a few dozen iterations but would quickly diverge. The other two games also did not converge. Significant improvements occurred after reducing to a learning rate of about $0.001$. 
+
+% We used
+
+% \begin{itemize}
+%     \item \cp~learning rate 001
+% \end{itemize}
+
 \subsection{Hyperparameter Tuning Results}
+
+
+
+
+We performed several grid searches to find hyperparameters that worked for all three games. (we found that CartPole preferred a larger learning rate)
+
 
 In order to find hyperparameters that worked for all three games, 
 
@@ -277,7 +309,7 @@ Target network is bad etc.
 
 \subsection{Deep Q-Network}
 
-\todo{make sure to mention that 50 is a good score}
+\todo{make sure to mention that 50 is a good average}
 
 \begin{figure}[!ht]
 \foreach \game in {CartPole, Acrobot, MountainCar}
@@ -333,9 +365,7 @@ Adding Hindsight Experience Replay to MountainCar
     
     \item Inside the directory containing the repository, create the \texttt{conda} environment, which consists of all the necessary packages: 
     
-    \begin{verbatim}
-    conda env create -f environment.yml
-    \end{verbatim}
+    \mint{bash}|conda env create -f environment.yml|
 
     \item Fix errors if unmerged into master OpenAI Gym branch
     
