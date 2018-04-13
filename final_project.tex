@@ -295,10 +295,7 @@ As a baseline, we ran a random policy on each game. The average rewards and dura
 
 \subsection{Hyperparameter Tuning Results}
 
-
-
-
-We performed several grid searches to find hyperparameters that worked for all three games. (we found that CartPole preferred a larger learning rate)
+We performed several grid searches to find hyperparameters that worked for all three games and to get a general feel for the parameter space. (we found that CartPole preferred a larger learning rate)
 
 
 In order to find hyperparameters that worked for all three games, 
@@ -306,6 +303,22 @@ In order to find hyperparameters that worked for all three games,
 put grid search results here
 
 Target network is bad etc.
+
+comment on how the loss isn't converging
+
+sample Q values don't really make sense, especially for \cp
+ 
+MSE was bad compared to Huber - unstable
+
+Adam, even though it's a popular optimizer, was bad (not included; used RMSProp instead)
+
+learning rates differ for different games (\cp wants a higher learning rate, for instance)
+
+in order to get these results, we did some inspection and regressed means on categorical variables to see which hyperparameters were good
+
+including weight decay and annealing help with stability
+
+
 
 \subsection{Deep Q-Network}
 
