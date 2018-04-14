@@ -19,6 +19,10 @@
 
 \maketitle
 
+\begin{abstract}
+    Deep convolutional neural networks have become a popular approach to estimating Q-value functions in reinforcement learning problems. These deep Q-networks take in entire images as network inputs, often resulting in large state spaces and long learning times. In this paper, we explore the use of principal component analysis to reduce the state space of network inputs. After testing multiple network configurations, we determine that a reduction in uninformative state features through PCA helps improve the performance of deep reinforcement learning.
+\end{abstract}
+
 \section{Introduction}
 
 Current methods of Q-learning with deep networks are inhibited by the
@@ -107,9 +111,9 @@ PCA works as follows: \todo{maybe math}
 OpenAI Gym \cite{brockman2016openai} offers a set of many standard games on which to test reinforcement learning algorithms. We tested our algorithms, which learn on pixel images, on the following games. See Figure \ref{fig:game_images} for sample images of each game.
 
 \begin{description}
-    \item[\href{https://gym.openai.com/envs/CartPole-v0/}{CartPole-v0}] \cp is the classic reinforcement learning environment. At every time step, the agent receives a reward of $1$ and chooses to push the cart either right or left. The game ends when the pole falls to an angle greater than 15 degrees from vertical or when the cart moves off the screen. 
-    \item[\href{https://gym.openai.com/envs/Acrobot-v1/}{Acrobot-v1}] \ab is a reinforcement learning game consisting of a double pendulum. The agent can only apply force to the connecting joint (left, right, or no movement) and must swing the pendulum so that the tip of the pendulum reaches a certain height. The agent receives a reward of $-1$ for every time step the goal is not reached.
-    \item[\href{https://gym.openai.com/envs/MountainCar-v0/}{MountainCar-v0}] \mc is a reinforcement learning game in which the agent tries to drive a car up a hill. The car is not strong enough to climb the hill itself and thus must learn to use gravity to achieve the necessary speed. At every time step, the three movements available are accelerating to the right, accelerating to the left, and doing nothing. The agent receives a reward of $-1$ for every time step the goal is not reached. 
+    \item[\href{https://gym.openai.com/envs/CartPole-v0/}{CartPole-v0}] \cp~is the classic reinforcement learning environment. At every time step, the agent receives a reward of $1$ and chooses to push the cart either right or left. The game ends when the pole falls to an angle greater than 15 degrees from vertical or when the cart moves off the screen. 
+    \item[\href{https://gym.openai.com/envs/Acrobot-v1/}{Acrobot-v1}] \ab~is a reinforcement learning game consisting of a double pendulum. The agent can only apply force to the connecting joint (left, right, or no movement) and must swing the pendulum so that the tip of the pendulum reaches a certain height. The agent receives a reward of $-1$ for every time step the goal is not reached.
+    \item[\href{https://gym.openai.com/envs/MountainCar-v0/}{MountainCar-v0}] \mc~is a reinforcement learning game in which the agent tries to drive a car up a hill. The car is not strong enough to climb the hill itself and thus must learn to use gravity to achieve the necessary speed. At every time step, the three movements available are accelerating to the right, accelerating to the left, and doing nothing. The agent receives a reward of $-1$ for every time step the goal is not reached. 
 \end{description}
 
 \begin{figure}[!ht]
@@ -162,7 +166,7 @@ In our experiments, we used four different types of models, each of which includ
     \item[(D)DQCNN-PCA-Mini] Out of curiosity, we included one additional model, which takes the one-dimensional vector obtained from the PCA transformation and reshapes it into a square (zero padding if necessary). We then convolved the resulting ``image'' through a smaller neural network to predict the Q-value for each state. Although PCA strips correlation between nearby pixels, we were interested in investigating whether the reduced dimensionality preserved some structure between nearby values.
 \end{description}
 
-For the (D)DQCNN and (D)DQCNN-PCA models, we kept our network structure similar to \cite{mnih2013playing} and \cite{mnih2015human} by using three hidden layers in each network. These DQNs take in an $80 \times 80$ grayscale image. Each hidden layer in the network convolves the previous layer's output into multiple filters, followed by a batch normalization and a leaky ReLU with $\alpha = 0.001$ to prevent dead nodes. The first layer convolves $8$ $8 \times 8$ filters with stride $4$; the second layer convolves $16$ $4 \times 4$ filters with stride $2$; the final hidden layer convolves $16$ $4 \times 4$ filters, this time with stride $1$. A max pooling with kernel size $2$ is then applied to reduce the dimensionality of the output. The final layer is fully connected and maps linearly to the number of actions available. For instance, since \cp contains two actions at any time, the output of the neural network contains two nodes. This structure saves time when forwarding through the network, since a single forward pass for a given state $s$ gives $\hat{Q}_\text{network}(s, a)$ for all $a \in \mathcal{A}$.
+For the (D)DQCNN and (D)DQCNN-PCA models, we kept our network structure similar to \cite{mnih2013playing} and \cite{mnih2015human} by using three hidden layers in each network. These DQNs take in an $80 \times 80$ grayscale image. Each hidden layer in the network convolves the previous layer's output into multiple filters, followed by a batch normalization and a leaky ReLU with $\alpha = 0.001$ to prevent dead nodes. The first layer convolves $8$ $8 \times 8$ filters with stride $4$; the second layer convolves $16$ $4 \times 4$ filters with stride $2$; the final hidden layer convolves $16$ $4 \times 4$ filters, this time with stride $1$. A max pooling with kernel size $2$ is then applied to reduce the dimensionality of the output. The final layer is fully connected and maps linearly to the number of actions available. For instance, since \cp~contains two actions at any time, the output of the neural network contains two nodes. This structure saves time when forwarding through the network, since a single forward pass for a given state $s$ gives $\hat{Q}_\text{network}(s, a)$ for all $a \in \mathcal{A}$.
 
 To keep the models relatively similar in size, we kept the number of parameters for each model as close as possible. For the (D)DQN-PCA model, we tried a variety of network architectures, varying the number of layers as well as the number of nodes in each layer. 
 
@@ -312,13 +316,13 @@ MSE was bad compared to Huber - unstable
 
 Adam, even though it's a popular optimizer, was bad (not included; used RMSProp instead)
 
-learning rates differ for different games (\cp wants a higher learning rate, for instance)
+learning rates differ for different games (\cp~wants a higher learning rate, for instance)
 
 in order to get these results, we did some inspection and regressed means on categorical variables to see which hyperparameters were good
 
 including weight decay and annealing help with stability
 
-
+The full set of raw data, metadata, and plots are available at this \href{https://drive.google.com/drive/folders/15gt9bv0kPBCHnJyW_RzsYQygeMaK1uCf?usp=sharing}{link} (warning: approximately 700 MB).
 
 \subsection{Deep Q-Network}
 
