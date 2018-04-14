@@ -197,7 +197,7 @@ We tested many configurations of hyperparameters, varying the following:
     
     \item[Loss function] The loss function used in the model. The Huber loss (defined as the $\ell_2$ norm for losses greated than 1 and the $\ell_1$ norm otherwise) and the mean squared error (MSE) loss were the two loss functions considered.
     
-    \item[Regularization] The weight decay in the optimizer. This value typically ranges from $0$ to $1$. This value is used to prevent overfitting in our networks.
+    \item[Regularization] The weight decay in the optimizer. This value typically ranges from $0$ to $1$ and is used to prevent overfitting in our networks.
     
     \item[Agent action selection] We used an $\epsilon$-greedy agent, annealing $\epsilon$ from $\epsilon_\text{initial} = 1$ to $\epsilon_\text{final} = 0.1$ according to the equation $$\epsilon_t = \epsilon_\text{final} + (\epsilon_\text{initial} - \epsilon_\text{final}) \exp\left(-\frac{t}{\lambda_\epsilon}\right),$$ where $t$ is the number of times the agent has already selected an action, and $\lambda$ is the decay rate. 
 \end{description}
@@ -278,8 +278,8 @@ As a baseline, we ran a random policy on each game. The average rewards and dura
     \begin{tabular}{c|cc}
         \toprule
         Game & Average Duration & Average Reward \\ \midrule
-        CartPole-v0 & 599.73 & -598.73 \\
-        Acrobot-v1 & 18.441 & 18.441 \\
+        CartPole-v0 & 18.441 & 18.441 \\
+        Acrobot-v1 & 599.73 & -598.73 \\
         MountainCar-v0 & 2717.77 & -2717.77 \\
         \bottomrule
     \end{tabular}
@@ -362,7 +362,7 @@ Consider the same for Atari games and others, as long as they have discrete acti
 
 We had severely limited computational power and time, so extending the paper using more varied learning rates and annealing schedules could offer better performance. Also computing using GPUs (which were unfortunately not available) rather than CPUs would have been great.
 
-Adding Hindsight Experience Replay to MountainCar
+Adding Hindsight Experience Replay to \mc
 
 \newpage
 \bibliography{final_project}{}
