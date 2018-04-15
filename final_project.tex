@@ -3,6 +3,7 @@
 \usepackage{todonotes}
 
 \usepackage{pgffor}
+\usepackage{csvsimple}
 
 \usepackage[utf8]{inputenc} 
 % \doublespacing
@@ -252,6 +253,8 @@ Although we did have access to a computing cluster, we did not have access to GP
 
 \section{Results}
 
+The full set of raw data, metadata, and plots are available at this \href{https://drive.google.com/drive/folders/15gt9bv0kPBCHnJyW_RzsYQygeMaK1uCf?usp=sharing}{link} (warning: approximately 700 MB).
+
 \subsection{Random Policy}
 
 As a baseline, we ran a random policy on each game. The average rewards and durations for the three games are available in Table \ref{tab:random_rewards}.
@@ -297,53 +300,11 @@ As a baseline, we ran a random policy on each game. The average rewards and dura
 
 \subsection{Hyperparameter Tuning Results}
 
-We performed several grid searches to find hyperparameters that worked for all three games and to get a general feel for the parameter space. (we found that CartPole preferred a larger learning rate)
+For \mc, this is the best we ever saw. Both \ab~and \mc~work well with DQN, lr=0.001, original architecture, frame skip 3 or 4, update frequency 1, no annealing, no regularization, Huber loss, about 500 episodes. \cp~doesn't train so well though. It seems to prefer a larger learning rate.
 
+In general, \mc~was rather difficult to learn, as the final policy seems to depend heavily on the random initialization. With suboptimal hyperparameters, the episodes under a random policy can extend to tens of thousands of time steps, and all transitions entered into the replay memory have $r = -1$, so the learned policy can diverge. 
 
-In order to find hyperparameters that worked for all three games, 
-
-put grid search results here
-
-Target network is bad etc.
-
-comment on how the loss isn't converging
-
-sample Q values don't really make sense, especially for \cp
- 
-MSE was bad compared to Huber - unstable
-
-Adam, even though it's a popular optimizer, was bad (not included; used RMSProp instead)
-
-learning rates differ for different games (\cp~wants a higher learning rate, for instance)
-
-in order to get these results, we did some inspection and regressed means on categorical variables to see which hyperparameters were good
-
-including weight decay and annealing help with stability
-
-The full set of raw data, metadata, and plots are available at this \href{https://drive.google.com/drive/folders/15gt9bv0kPBCHnJyW_RzsYQygeMaK1uCf?usp=sharing}{link} (warning: approximately 700 MB).
-
-\subsection{Deep Q-Network}
-
-\todo{make sure to mention that 50 is a good average}
-
-% \begin{figure}[!ht]
-% \foreach \game in {CartPole, Acrobot, MountainCar}
-% {
-%     \subfloat[Rewards for a DQN policy in the \game~game with $\texttt{lr}=0.001$, RMSProp optimizer, Huber Loss. \label{subfig:\game_DQN_GS_EpsilonGreedy_rewards}]{%
-%         \includegraphics[width=0.45\textwidth]{\game/\game_DQN_GS_EpsilonGreedy_rewards.pdf}
-%     }
-%     \hfill
-%     \subfloat[Durations for a DQN policy in the \game~game with $\texttt{lr}=0.001$, RMSProp optimizer, Huber Loss. \label{subfig:\game_DQN_GS_EpsilonGreedy_durations}]{%
-%         \includegraphics[width=0.45\textwidth]{\game/\game_DQN_GS_EpsilonGreedy_rewards.pdf}
-%     }
-% }
-% \caption{DQN Results from several classic control games from OpenAI Gym under the $\epsilon$-greedy policy and DQN model.}
-% \label{fig:dqn_1}
-% \end{figure}
-
-For MountainCar, this is the best we ever saw. Both Acrobot and MountainCar work well with DQN, lr=0.001, original architecture, frame skip 3 or 4, update frequency 1, no annealing, no regularization, Huber loss, about 500 episodes. CartPole doesn't train so well though. It seems to prefer a larger learning rate.
-
-In general, MountainCar was rather difficult to learn, as the final policy seems to depend heavily on the random initialization. With suboptimal hyperparameters, the episodes under a random policy can extend to tens of thousands of time steps, and all transitions entered into the replay memory have $r = -1$, so the learned policy can diverge. 
+\csvautotabular{csvs/grid_search_v1_10k.csv}
 
 \subsection{Double Deep Q-Network}
 
@@ -368,6 +329,31 @@ See Figures \ref{fig:CartPole_DDQN-GS_rewards_losses}--\ref{fig:MountainCar_DDQC
         \end{figure}
     }
 }
+
+We performed several grid searches to find hyperparameters that worked for all three games and to get a general feel for the parameter space. (we found that CartPole preferred a larger learning rate)
+
+
+In order to find hyperparameters that worked for all three games, 
+
+put grid search results here
+
+Target network is bad etc.
+
+comment on how the loss isn't converging
+
+sample Q values don't really make sense, especially for \cp
+ 
+MSE was bad compared to Huber - unstable
+
+Adam, even though it's a popular optimizer, was bad (not included; used RMSProp instead)
+
+learning rates differ for different games (\cp~wants a higher learning rate, for instance)
+
+in order to get these results, we did some inspection and regressed means on categorical variables to see which hyperparameters were good
+
+including weight decay and annealing help with stability
+
+make sure to mention that 50 is a good average
 
 None of the games performed well with DDQN-PCA, which simply inputs the reduced state space through a conventional deep neural network. This is perhaps 
 
