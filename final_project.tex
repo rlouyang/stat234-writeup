@@ -4,7 +4,6 @@
 
 \usepackage{longtable}
 \usepackage{pgffor}
-\usepackage{csvsimple}
 
 \usepackage[utf8]{inputenc} 
 % \doublespacing
@@ -300,6 +299,10 @@ As a baseline, we ran a random policy on each game. The average rewards and dura
 % \end{itemize}
 
 \subsection{Hyperparameter Tuning Results}
+
+For \mc, this is the best we ever saw. Both \ab~and \mc~work well with DQN, lr=0.001, original architecture, frame skip 3 or 4, update frequency 1, no annealing, no regularization, Huber loss, about 500 episodes. \cp~doesn't train so well though. It seems to prefer a larger learning rate.
+
+In general, \mc~was rather difficult to learn, as the final policy seems to depend heavily on the random initialization. With suboptimal hyperparameters, the episodes under a random policy can extend to tens of thousands of time steps, and all transitions entered into the replay memory have $r = -1$, so the learned policy can diverge. 
 
 For MountainCar, this is the best we ever saw. Both Acrobot and MountainCar work well with DQN, lr=0.001, original architecture, frame skip 3 or 4, update frequency 1, no annealing, no regularization, Huber loss, about 500 episodes. CartPole doesn't train so well though. It seems to prefer a larger learning rate.
 
