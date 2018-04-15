@@ -2,8 +2,8 @@
 \usepackage{final_project}
 \usepackage{todonotes}
 
+\usepackage{longtable}
 \usepackage{pgffor}
-\usepackage{csvsimple}
 
 \usepackage[utf8]{inputenc} 
 % \doublespacing
@@ -304,7 +304,48 @@ For \mc, this is the best we ever saw. Both \ab~and \mc~work well with DQN, lr=0
 
 In general, \mc~was rather difficult to learn, as the final policy seems to depend heavily on the random initialization. With suboptimal hyperparameters, the episodes under a random policy can extend to tens of thousands of time steps, and all transitions entered into the replay memory have $r = -1$, so the learned policy can diverge. 
 
-\csvautotabular{csvs/grid_search_v1_10k.csv}
+For MountainCar, this is the best we ever saw. Both Acrobot and MountainCar work well with DQN, lr=0.001, original architecture, frame skip 3 or 4, update frequency 1, no annealing, no regularization, Huber loss, about 500 episodes. CartPole doesn't train so well though. It seems to prefer a larger learning rate.
+
+In general, MountainCar was rather difficult to learn, as the final policy seems to depend heavily on the random initialization. With suboptimal hyperparameters, the episodes under a random policy can extend to tens of thousands of time steps, and all transitions entered into the replay memory have $r = -1$, so the learned policy can diverge. 
+
+% key,mean,std,max,min,25,50,75,game,model,agent,n_trains,processing,target_update,frame_skip,update_frequency,batch_size,gamma,initial_learning_rate,annealing,optimizer,loss_function,weight_decay,layer_sizes
+
+\begin{table}[!htbp]
+  \footnotesize
+  \centering
+  \input{csvs/grid_search_v1_10k.tex}
+  
+  \caption{Top 15 parameter-tuned means per game between DDQN-GS and DQN-GS for 10,000 train iterations.}
+  \label{tab:grid_search_v1_10k}
+\end{table}
+
+\begin{table}[!htbp]
+  \footnotesize
+  \centering
+  \input{csvs/grid_search_v2_50k.tex}
+  
+  \caption{Huber Loss, annealing, no target update, RMSProp, 50k}
+  \label{tab:grid_search_v2_50k}
+\end{table}
+
+Target network set to false
+
+\begin{table}[!htbp]
+  \footnotesize
+  \centering
+  \input{csvs/grid_search_v3_100k.tex}
+  
+  \caption{DDQN-GS, Huber Loss, annealing, 0.1 weight decay for 100k iterations.}
+  \label{tab:grid_search_v3_100k}
+\end{table}
+
+\begin{table}[!htbp]
+  \centering
+  \input{csvs/final_v1_100k.tex}
+  
+  \caption{Model comparison with final hyperparameters over 100,000 train iterations.}
+  \label{tab:final_v1_100k}
+\end{table}
 
 \subsection{Double Deep Q-Network}
 
@@ -407,3 +448,8 @@ Adding Hindsight Experience Replay to \mc
 
 
 \end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
