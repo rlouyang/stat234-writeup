@@ -141,9 +141,7 @@ PyTorch \cite{paszke2017pytorch} is a Python framework for constructing neural n
 
 We replicated the original deep Q-network papers \cite{mnih2013playing, mnih2015human} in Python, using PyTorch \cite{paszke2017pytorch} for the neural network architecture and OpenAI Gym \cite{brockman2016openai} to test and compare our algorithms on different games. 
 
-There are quite a few steps to get started to replicate our procedure, including changing some of the source code in OpenAI Gym. For the sake of brevity, these instructions are included in Appendix \ref{app:getting_started}.
-
-To run our experiments, we used the Odyssey research computing cluster to run computationally intensive jobs.
+There are quite a few steps to get started to replicate our procedure, including changing some of the source code in OpenAI Gym. For the sake of brevity, these instructions are included in Appendix \ref{app:getting_started}. To run our experiments, we used the Odyssey research computing cluster to run computationally intensive jobs.
 
 \subsection{Image Preprocessing}
 
@@ -265,7 +263,7 @@ As a baseline, we ran a random policy on each game. The average rewards and dura
         \includegraphics[width=0.45\textwidth]{\game/\game_NoTraining_Random_rewards.pdf}
     }
     \hfill
-    \subfloat[Durations for a random policy in the \game~game.\label{subfig:\game_NoTraining_Random_durations}]{%
+    \subfloat[Durations for a random policy in the \game~game.\label{subfig:\game_NoTraining_Random_duraions}]{%
         \includegraphics[width=0.45\textwidth]{\game/\game_NoTraining_Random_durations.pdf}
     }
 }
@@ -328,20 +326,20 @@ The full set of raw data, metadata, and plots are available at this \href{https:
 
 \todo{make sure to mention that 50 is a good average}
 
-\begin{figure}[!ht]
-\foreach \game in {CartPole, Acrobot, MountainCar}
-{
-    \subfloat[Rewards for a DQN policy in the \game~game with $\texttt{lr}=0.001$, RMSProp optimizer, Huber Loss. \label{subfig:\game_DQN_GS_EpsilonGreedy_rewards}]{%
-        \includegraphics[width=0.45\textwidth]{\game/\game_DQN_GS_EpsilonGreedy_rewards.pdf}
-    }
-    \hfill
-    \subfloat[Durations for a DQN policy in the \game~game with $\texttt{lr}=0.001$, RMSProp optimizer, Huber Loss. \label{subfig:\game_DQN_GS_EpsilonGreedy_durations}]{%
-        \includegraphics[width=0.45\textwidth]{\game/\game_DQN_GS_EpsilonGreedy_rewards.pdf}
-    }
-}
-\caption{DQN Results from several classic control games from OpenAI Gym under the $\epsilon$-greedy policy and DQN model.}
-\label{fig:dqn_1}
-\end{figure}
+% \begin{figure}[!ht]
+% \foreach \game in {CartPole, Acrobot, MountainCar}
+% {
+%     \subfloat[Rewards for a DQN policy in the \game~game with $\texttt{lr}=0.001$, RMSProp optimizer, Huber Loss. \label{subfig:\game_DQN_GS_EpsilonGreedy_rewards}]{%
+%         \includegraphics[width=0.45\textwidth]{\game/\game_DQN_GS_EpsilonGreedy_rewards.pdf}
+%     }
+%     \hfill
+%     \subfloat[Durations for a DQN policy in the \game~game with $\texttt{lr}=0.001$, RMSProp optimizer, Huber Loss. \label{subfig:\game_DQN_GS_EpsilonGreedy_durations}]{%
+%         \includegraphics[width=0.45\textwidth]{\game/\game_DQN_GS_EpsilonGreedy_rewards.pdf}
+%     }
+% }
+% \caption{DQN Results from several classic control games from OpenAI Gym under the $\epsilon$-greedy policy and DQN model.}
+% \label{fig:dqn_1}
+% \end{figure}
 
 For MountainCar, this is the best we ever saw. Both Acrobot and MountainCar work well with DQN, lr=0.001, original architecture, frame skip 3 or 4, update frequency 1, no annealing, no regularization, Huber loss, about 500 episodes. CartPole doesn't train so well though. It seems to prefer a larger learning rate.
 
@@ -350,6 +348,28 @@ In general, MountainCar was rather difficult to learn, as the final policy seems
 \subsection{Double Deep Q-Network}
 
 \subsection{PCA Networks}
+
+See Figures \ref{fig:CartPole_DDQN-GS_rewards_losses}--\ref{fig:MountainCar_DDQCNN-PCA-Mini_rewards_losses} for a comparison of the PCA networks tested. These model comparison results generalized quite well to other hyperparameter settings.
+
+\foreach \game in {CartPole, Acrobot, MountainCar}
+{
+    \foreach \model in {DDQN-GS, DDQN-PCA, DDQCNN-PCA, DDQCNN-PCA-Mini}
+    {
+        \begin{figure}[!ht]
+            \subfloat[Rewards for the \model~model in the \game~game. \label{subfig:\game_\model_EpsilonGreedy_rewards_cpu}]{%
+                \includegraphics[width=0.45\textwidth]{\game/\game_\model_EpsilonGreedy_rewards_cpu.pdf}
+            }
+            \hfill
+            \subfloat[Losses for the \model~model in the \game~game. \label{subfig:\game_\model_EpsilonGreedy_losses_cpu}]{%
+                \includegraphics[width=0.45\textwidth]{\game/\game_\model_EpsilonGreedy_losses_cpu.pdf}
+            }
+            \caption{Rewards and losses for the \model~model in the \game~game.}
+            \label{fig:\game_\model_rewards_losses}
+        \end{figure}
+    }
+}
+
+None of the games performed well with DDQN-PCA, which simply inputs the reduced state space through a conventional deep neural network. This is perhaps 
 
 \todo{talk about results here\dots}
 
