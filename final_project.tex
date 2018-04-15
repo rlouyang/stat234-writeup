@@ -201,29 +201,6 @@ We tested many configurations of hyperparameters, varying the following:
     \item[Agent action selection] We used an $\epsilon$-greedy agent, annealing $\epsilon$ from $\epsilon_\text{initial} = 1$ to $\epsilon_\text{final} = 0.1$ according to the equation $$\epsilon_t = \epsilon_\text{final} + (\epsilon_\text{initial} - \epsilon_\text{final}) \exp\left(-\frac{t}{\lambda_\epsilon}\right),$$ where $t$ is the number of times the agent has already selected an action, and $\lambda$ is the decay rate. 
 \end{description}
 
-Our final hyperparameters, used in the rest of the paper, are available in Table \ref{tab:grid_search_hyperparameters}.
-
-\begin{table}[!htbp]
-    \centering
-    \begin{tabular}{c|c}
-        \toprule
-        Hyperparameter & Value \\ \midrule
-        Model & DDQN \\
-        Frame skip & $3$ \\
-        Update frequency & $4$ \\
-        Training updates & $100000$ \\
-        Replay memory size & $10000$ \\
-        Target update & N/A \\
-        Learning rate & $0.001$ \\
-        Learning rate annealing & Yes \\
-        Batch size & $128$ \\
-        Loss function & Huber loss \\
-        Regularization & $0.1$ \\
-        \bottomrule
-    \end{tabular}
-    \caption{The hyperparameters found by our grid search and used for the PCA variants of the (D)DQN.}
-    \label{tab:grid_search_hyperparameters}
-\end{table}
 
 \subsection{Implementation Details}
 
@@ -315,7 +292,7 @@ In general, MountainCar was rather difficult to learn, as the final policy seems
   \centering
   \input{csvs/grid_search_v1_10k.tex}
   
-  \caption{Top 15 parameter-tuned means per game between DDQN-GS and DQN-GS for 10,000 train iterations.}
+  \caption{Top 15 parameter-tuned means per game between DDQN-GS and DQN-GS for $10,000$ train iterations.}
   \label{tab:grid_search_v1_10k}
 \end{table}
 
@@ -324,7 +301,7 @@ In general, MountainCar was rather difficult to learn, as the final policy seems
   \centering
   \input{csvs/grid_search_v2_50k.tex}
   
-  \caption{Huber Loss, annealing, no target update, RMSProp, 50k}
+  \caption{Huber Loss, annealing, no target update, RMSProp, $50,000$ training iterations}
   \label{tab:grid_search_v2_50k}
 \end{table}
 
@@ -335,7 +312,7 @@ Target network set to false
   \centering
   \input{csvs/grid_search_v3_100k.tex}
   
-  \caption{DDQN-GS, Huber Loss, annealing, 0.1 weight decay for 100k iterations.}
+  \caption{DDQN-GS, Huber Loss, annealing, 0.1 weight decay for $100,000$ training iterations.}
   \label{tab:grid_search_v3_100k}
 \end{table}
 
@@ -343,11 +320,33 @@ Target network set to false
   \centering
   \input{csvs/final_v1_100k.tex}
   
-  \caption{Model comparison with final hyperparameters over 100,000 train iterations.}
+  \caption{Model comparison with final hyperparameters over $100,000$ training iterations.}
   \label{tab:final_v1_100k}
 \end{table}
 
-\subsection{Double Deep Q-Network}
+Our final hyperparameters, used in the rest of the paper, are available in Table \ref{tab:grid_search_hyperparameters}.
+
+\begin{table}[!htbp]
+    \centering
+    \begin{tabular}{c|c}
+        \toprule
+        Hyperparameter & Value \\ \midrule
+        Model & DDQN \\
+        Frame skip & $3$ \\
+        Update frequency & $4$ \\
+        Training updates & $100000$ \\
+        Replay memory size & $10000$ \\
+        Target update & N/A \\
+        Learning rate & $0.001$ \\
+        Learning rate annealing & Yes \\
+        Batch size & $128$ \\
+        Loss function & Huber loss \\
+        Regularization & $0.1$ \\
+        \bottomrule
+    \end{tabular}
+    \caption{The hyperparameters found by our grid search and used for the PCA variants of the (D)DQN.}
+    \label{tab:grid_search_hyperparameters}
+\end{table}
 
 \subsection{PCA Networks}
 
@@ -401,6 +400,7 @@ None of the games performed well with DDQN-PCA, which simply inputs the reduced 
 \todo{talk about results here\dots}
 
 \section{Discussion}
+
 \section{Conclusion}
 
 \subsection{Further Directions}
