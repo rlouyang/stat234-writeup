@@ -4,16 +4,17 @@
 
 \usepackage{longtable}
 \usepackage{pgffor}
-\usepackage{csvsimple}
 
 \usepackage[utf8]{inputenc} 
 % \doublespacing
+
+% \usepackage[nomarkers]{endfloat}
 
 \newcommand{\cp}{\texttt{CartPole}}
 \newcommand{\ab}{\texttt{Acrobot}}
 \newcommand{\mc}{\texttt{MountainCar}}
 
-\title{State Space Reduction in Deep Q-Networks} 
+\title{State-Space Reduction in Deep Q-Networks} 
 \author{Michael Ge, Richard Ouyang} 
 \date{April 24, 2018}
 
@@ -24,6 +25,11 @@
 \begin{abstract}
     Deep convolutional neural networks have become a popular approach to estimating Q-value functions in reinforcement learning problems. These deep Q-networks take in entire images as network inputs, often resulting in large state spaces and long learning times. In this paper, we explore the use of principal component analysis to reduce the state space of network inputs. After testing multiple network configurations, we determine that a reduction in uninformative state features through PCA helps improve the performance of deep reinforcement learning.
 \end{abstract}
+
+\newpage
+\tableofcontents
+
+\newpage
 
 \section{Introduction}
 
@@ -37,7 +43,7 @@ the data, it is still difficult to learn a good policy in a time- and
 data-efficient manner. We experiment with reducing state space
 dimensionality required by deep Q-networks (DQNs) by applying
 principal component analysis (PCA) to improve learned policies and
-training times on a variety of OpenAI games.
+training times on a variety of OpenAI games. Although state-space reduction has previously been studied in reinforcement learning \cite{kishima2013reduction}, use of PCA in reducing state spaces, particularly for neural networks, has not previously been considered.
 
 In addition, we provide an extensible and easy-to-use software
 framework to test various types of agents and Q-networks, even for
@@ -119,14 +125,18 @@ OpenAI Gym \cite{brockman2016openai} offers a set of many standard games on whic
 \end{description}
 
 \begin{figure}[!ht]
-\foreach \game in {CartPole, Acrobot, MountainCar}
+\foreach \imagetype in {original, processed}
 {
-    \subfloat[Sample original image of the \game~game screen. \label{subfig:\game_original}]{%
-        \includegraphics[width=0.35\textwidth]{game_images/\game_original.pdf}
+    \subfloat[Sample \imagetype~image of the \cp~game screen. \label{subfig:cartpole_\imagetype}]{%
+        \includegraphics[width=0.30\textwidth]{game_images/CartPole_\imagetype.pdf}
     }
     \hfill
-    \subfloat[Sample processed image of the \game~game screen.\label{subfig:\game_processed}]{%
-        \includegraphics[width=0.35\textwidth]{game_images/\game_processed.pdf}
+    \subfloat[Sample \imagetype~image of the \ab~game screen. \label{subfig:acrobot_\imagetype}]{%
+        \includegraphics[width=0.30\textwidth]{game_images/Acrobot_\imagetype.pdf}
+    }
+    \hfill
+    \subfloat[Sample PCA image of the \mc~game screen. \label{subfig:mountaincar_\imagetype}]{%
+        \includegraphics[width=0.30\textwidth]{game_images/MountainCar_\imagetype.pdf}
     }
 }
 \caption{Original and processed images from the three games discussed in this paper. The processed images were created by grayscaling the original images and resizing from $600 \times 400$ pixels to $80 \times 80$ pixels. The resulting feature space is then $\mathbb{R}^{6400}$.}
@@ -157,7 +167,7 @@ At each time step, we obtained the RGB (color) mapping of the game screen, resiz
 In our experiments, we used four different types of models, each of which includes the original and double network variants: 
 
 \begin{description}
-    \item[(D)DQCNN] The original model \cite{mnih2013playing, mnih2015human} and variants \cite{van2016deep}. These models convolve images using no extra state-space reduction techniques like PCA.
+    \item[(D)DQCNN] The original model \cite{mnih2013playing, mnih2015human} and variants \cite{van2016deep}. These models convolve images using no extra state-space reduction techniques like PCA. This model is also referred to as (D)DQN-GS, since this is the original grayscale model. We use these two terms interchangeably.
     
     \item[(D)DQN-PCA] These models use a database of 1000 states as training data for PCA and project the pixel features of new states onto the subspace that captures 99\% of the variance. The results is a one-dimensional vector with varying lengths based on the game (100 to 500 features). This vector is passed into a conventional (not convolutional) deep neural network to predict the Q-value.
     
@@ -166,11 +176,30 @@ In our experiments, we used four different types of models, each of which includ
     \item[(D)DQCNN-PCA-Mini] Out of curiosity, we included one additional model, which takes the one-dimensional vector obtained from the PCA transformation and reshapes it into a square (zero padding if necessary). We then convolved the resulting ``image'' through a smaller neural network to predict the Q-value for each state. Although PCA strips correlation between nearby pixels, we were interested in investigating whether the reduced dimensionality preserved some structure between nearby values.
 \end{description}
 
-For the (D)DQCNN and (D)DQCNN-PCA models, we kept our network structure similar to \cite{mnih2013playing} and \cite{mnih2015human} by using three hidden layers in each network. These DQNs take in an $80 \times 80$ grayscale image. Each hidden layer in the network convolves the previous layer's output into multiple filters, followed by a batch normalization and a leaky ReLU with $\alpha = 0.001$ to prevent dead nodes. The first layer convolves $8$ $8 \times 8$ filters with stride $4$; the second layer convolves $16$ $4 \times 4$ filters with stride $2$; the final hidden layer convolves $16$ $4 \times 4$ filters, this time with stride $1$. A max pooling with kernel size $2$ is then applied to reduce the dimensionality of the output. The final layer is fully connected and maps linearly to the number of actions available. For instance, since \cp~contains two actions at any time, the output of the neural network contains two nodes. This structure saves time when forwarding through the network, since a single forward pass for a given state $s$ gives $\hat{Q}_\text{network}(s, a)$ for all $a \in \mathcal{A}$.
+For the (D)DQCNN and (D)DQCNN-PCA models, we kept our network structure similar to \cite{mnih2013playing} and \cite{mnih2015human} by using three hidden layers in each network. These DQNs take in an $80 \times 80$ grayscale image. Each hidden layer in the network convolves the previous layer's output into multiple filters, followed by a batch normalization and a leaky ReLU with $\alpha = 0.001$ to prevent dead nodes. The first layer convolves $8$ $8 \times 8$ filters with stride $4$; the second layer convolves $16$ $4 \times 4$ filters with stride $2$; the final hidden layer convolves $16$ $4 \times 4$ filters, this time with stride $1$. A max pooling with kernel size $2$ is then applied to reduce the dimensionality of the output. The final layer is fully connected and maps linearly to the number of actions available. For instance, since \cp~contains two actions at any time, the output of the neural network contains two nodes. This structure saves time when forwarding through the network, since a single forward pass for a given state $s$ gives $\hat{Q}_\text{network}(s, a)$ for all $a \in \mathcal{A}$. The images can be found in \ref{fig:pca_images}.
 
-To keep the models relatively similar in size, we kept the number of parameters for each model as close as possible. For the (D)DQN-PCA model, we tried a variety of network architectures, varying the number of layers as well as the number of nodes in each layer. 
+To keep the models relatively similar in size, we kept the number of parameters for each model as close as possible. For the (D)DQN-PCA model, we tested a variety of network architectures, varying the number of layers as well as the number of nodes in each layer. 
 
 For the (D)DQCNN-PCA-Mini model, we kept the rough network structure the same as our original models. However, to account for the smaller image size, we reduced the kernel size to 4 and the stride to 1 for all layers.
+
+\begin{figure}[!ht]
+\foreach \pca in {DQCNN-PCA, DQCNN-PCA-Mini}
+{
+    \subfloat[Sample PCA image of the \cp~game screen for the \pca~model. \label{subfig:cartpole_\pca_image}]{%
+        \includegraphics[width=0.30\textwidth]{game_images/CartPole_\pca.pdf}
+    }
+    \hfill
+    \subfloat[Sample PCA image of the \ab~game screen for the \pca~model. \label{subfig:acrobot_\pca_image}]{%
+        \includegraphics[width=0.30\textwidth]{game_images/Acrobot_\pca.pdf}
+    }
+    \hfill
+    \subfloat[Sample PCA image of the \mc~game screen for the \pca~model. \label{subfig:mountaincar_\pca_image}]{%
+        \includegraphics[width=0.30\textwidth]{game_images/MountainCar_\pca.pdf}
+    }
+}
+\caption{PCA images from the three games discussed in this paper. The PCA images were created by grayscaling the original images, using the features that capture 99\% of the variance, and either inverting the transformation or not. The resulting feature space depends on the PCA reduction amount.}
+\label{fig:pca_images}
+\end{figure}
 
 \subsection{Hyperparameters}
 
@@ -195,40 +224,15 @@ We tested many configurations of hyperparameters, varying the following:
     
     \item[Batch size] The minibatch size, or the number of transitions used in each training update. The two values tested were $32$ and $128$.
     
-    \item[Loss function] The loss function used in the model. The Huber loss (defined as the $\ell_2$ norm for losses greated than 1 and the $\ell_1$ norm otherwise) and the mean squared error (MSE) loss were the two loss functions considered.
+    \item[Loss function] The loss function used in the model. The Huber loss (defined as the $\ell_2$ norm for losses greater than 1 and the $\ell_1$ norm otherwise) and the mean squared error (MSE) loss were the two loss functions considered.
     
     \item[Regularization] The weight decay in the optimizer. This value typically ranges from $0$ to $1$ and is used to prevent overfitting in our networks.
     
     \item[Agent action selection] We used an $\epsilon$-greedy agent, annealing $\epsilon$ from $\epsilon_\text{initial} = 1$ to $\epsilon_\text{final} = 0.1$ according to the equation $$\epsilon_t = \epsilon_\text{final} + (\epsilon_\text{initial} - \epsilon_\text{final}) \exp\left(-\frac{t}{\lambda_\epsilon}\right),$$ where $t$ is the number of times the agent has already selected an action, and $\lambda$ is the decay rate. 
 \end{description}
 
-Our final hyperparameters, used in the rest of the paper, are available in Table \ref{tab:grid_search_hyperparameters}.
-
-\begin{table}[!htbp]
-    \centering
-    \begin{tabular}{c|c}
-        \toprule
-        Hyperparameter & Value \\ \midrule
-        Model & DDQN \\
-        Frame skip & $3$ \\
-        Update frequency & $4$ \\
-        Training updates & $100000$ \\
-        Replay memory size & $10000$ \\
-        Target update & N/A \\
-        Learning rate & $0.001$ \\
-        Learning rate annealing & Yes \\
-        Batch size & $128$ \\
-        Loss function & Huber loss \\
-        Regularization & $0.1$ \\
-        \bottomrule
-    \end{tabular}
-    \caption{The hyperparameters found by our grid search and used for the PCA variants of the (D)DQN.}
-    \label{tab:grid_search_hyperparameters}
-\end{table}
 
 \subsection{Implementation Details}
-
-\subsubsection{Model Implementation}
 
 The code is structured such that the user can pass a model, agent, game, and a large selection of hyperparameters into \texttt{main.py}. During the script execution, statistics are logged for later analysis. 
 
@@ -258,7 +262,7 @@ The full set of raw data, metadata, and plots are available at this \href{https:
 
 \subsection{Random Policy}
 
-As a baseline, we ran a random policy on each game. The average rewards and durations for the three games are available in Table \ref{tab:random_rewards}.
+As a baseline, we ran a random policy on each game, with results in Figure \ref{fig:random}. The average rewards and durations for the three games are available in Table \ref{tab:random_rewards}. With this initial goal in mind, we proceeded to test different model architectures and hyperparameter settings to achieve the best possible empirical results over all three games.
 
 \begin{figure}[!ht]
 \foreach \game in {CartPole, Acrobot, MountainCar}
@@ -275,7 +279,7 @@ As a baseline, we ran a random policy on each game. The average rewards and dura
 \label{fig:random}
 \end{figure}
 
-\begin{table}[!htbp]
+\begin{table}[!ht]
     \centering
     \begin{tabular}{c|cc}
         \toprule
@@ -301,57 +305,86 @@ As a baseline, we ran a random policy on each game. The average rewards and dura
 
 \subsection{Hyperparameter Tuning Results}
 
-For MountainCar, this is the best we ever saw. Both Acrobot and MountainCar work well with DQN, lr=0.001, original architecture, frame skip 3 or 4, update frequency 1, no annealing, no regularization, Huber loss, about 500 episodes. CartPole doesn't train so well though. It seems to prefer a larger learning rate.
+In our hyperparameter tuning, we decided to keep the frame skip, update frequency, replay memory size, and agent action selection hyperparameters constant for testing, since grid search sizes increase exponentially in the number of parameters, and varying these settings would vastly increase simulation time and space consumption. 
 
-In general, MountainCar was rather difficult to learn, as the final policy seems to depend heavily on the random initialization. With suboptimal hyperparameters, the episodes under a random policy can extend to tens of thousands of time steps, and all transitions entered into the replay memory have $r = -1$, so the learned policy can diverge. 
+All summary statistics are taken over the second half of the experiment, after the DQN has had time to learn the game and converge. This prevents the learning process from affecting measurements of the final learned policy.
 
-% key,mean,std,max,min,25,50,75,game,model,agent,n_trains,processing,target_update,frame_skip,update_frequency,batch_size,gamma,initial_learning_rate,annealing,optimizer,loss_function,weight_decay,layer_sizes
+\subsubsection{First Grid Search (10,000 Iterations)}
 
-\begin{table}[!htbp]
-  \footnotesize
-  \centering
-  \input{csvs/grid_search_v1_10k.tex}
-  
-  \caption{Top 15 parameter-tuned means per game between DDQN-GS and DQN-GS for 10,000 train iterations.}
-  \label{tab:grid_search_v1_10k}
+In order to establish a solid set of hyperparameters to which PCA variants of DQNs could be compared, we began our experiments with an initial grid search over the hyperparameters of interest for 10,000 training steps to eliminate poorly performing hyperparameter settings. Table \ref{tab:grid_search_v1_10k} contains the results of the top fifteen models for each game ordered by performance.
+
+\begin{table}[!ht]
+    \footnotesize
+    \centering
+    \input{csvs/grid_search_v1_10k.tex}
+    
+    \caption{Top fifteen parameter-tuned mean rewards per game for our first grid search. Each run used either the DDQN-GS or DQN-GS model and lasted for 10,000 training steps. Note that DDQNs do not have a target update option, so their value in the ``target'' column is NaN.}
+    \label{tab:grid_search_v1_10k}
 \end{table}
 
-\begin{table}[!htbp]
+From these results, we already find that our best hyperparameter configurations are beating the random baseline. \mc~was rather difficult to learn, as the final policy seems to depend heavily on the random initialization. With sub-optimal hyperparameters, the episodes under a poorly learned policy can extend to tens of thousands of time steps, far more than a random policy. This particular vulnerability to divergence likely occurs because all transitions entered into the replay memory have $r = -1$, creating difficulties in learning. \cp~roughly doubles the duration of the random policy, though the performance has significantly high variance in all models. Finally, \ab~seems to have been learned quite quickly, reaching optimal performance within the 10,000 training steps.
+
+Here, we observe strong performance by DDQN-GSs over DQN-GSs and by using a Huber loss function over an MSE loss. The Adam optimizer failed to learn in almost every simulation. Weight decay yielded mixed results, likely due to the fact that we only allowed the models to run for 10,000 training steps. Additionally, the effectiveness of the learning rate parameters varied significantly with the game; for example, \cp~learns better with a significantly higher learning rate than the other two games. We also saw that including a learning rate annealing slightly improved the overall performance of the algorithms, so we decided to keep the annealing. In theory, a learning rate annealing ought to improve the stability of the model after the model has had time to learn a strong policy. Not displayed in the data is the surprising fact that DQN-GSs with an enabled target update performed significantly worse than DQN-GSs without a target update in that they failed to reach any convergence at all, so we also decided to remove target update functionality for future experiments. With these observations in mind, we proceeded to test another batch of models for a longer period. 
+
+\subsubsection{Second Grid Search (50,000 Iterations)}
+ 
+Setting the optimizer, loss function, and target update to RMSProp, Huber loss, and False, respectively, we performed a second grid search over 50,000 training iterations to tune the learning rate and weight decay. The results can be found in Table \ref{tab:grid_search_v2_50k}.
+
+\begin{table}[!ht]
   \footnotesize
   \centering
   \input{csvs/grid_search_v2_50k.tex}
   
-  \caption{Huber Loss, annealing, no target update, RMSProp, 50k}
+  \caption{Top fifteen parameter-tuned mean rewards per game for our second grid search. All experiments used a Huber loss, learning rate annealing, no target update, and the RMSProp optimizer for 50,000 training steps.}
   \label{tab:grid_search_v2_50k}
 \end{table}
 
-Target network set to false
+\mc~and \ab~continued to perform well with more training time for the best models, though we began to see evidence of high variance in performance for these games. Both had the worst models getting average scores near the level of randomness. In these games, episodes are not completed until the agent succeeds at reaching above a certain height or climbing up the mountain. As a result, if an agent learns a poor policy early on, the agent could spend all of its training iterations receiving $-1$ reward with no positive feedback. To help mitigate this issue, we capped the number of training iterations per episode to 20,000 with the intent to expose the agent to more positive states and to speed up learning time. If an agent reaches a duration of 20,000, we already know that the agent does a poor job of learning a good policy and can afford to ignore the model, since in our random policy experiments, episode durations never surpassed 16,000 and rarely more than 10,000.
 
-\begin{table}[!htbp]
-  \footnotesize
+Again, we see that DDQN-GSs tend to outperform DQN-GSs. The learning rate, however, is inconsistent from the first grid search. Here, we find that overall, lower learning rates are preferred over higher ones for longer grid search durations. This is reasonable, since we expect that with a longer training duration, the agent has more time to converge to a good policy, whereas with only 10,000 iterations, the model needs a higher learning rate to quickly outdo random performance. As a result, we decided to continue even higher training times with lower learning rates. Weight decay does not appear to have a significant impact on the performance of the models, so we decided to take the more conservative option of a regularization coefficient of $0.1$.
+
+\subsubsection{Third Grid Search (100,000 Iterations)}
+
+By this point, we established that DDQCNNs tended to outperform DQCNNs, so we then explored hyperparameter configurations that yielded good performance over 100,000 iterations. We then performed a grid search, varying the batch size and learning rate. The results can be found in \ref{tab:grid_search_v3_100k}.
+
+\begin{table}[!ht]
   \centering
   \input{csvs/grid_search_v3_100k.tex}
   
-  \caption{DDQN-GS, Huber Loss, annealing, 0.1 weight decay for 100k iterations.}
+  \caption{Complete results for our third grid search, sorted by mean reward. All experiments used the DDQN-GS model with a Huber loss function, learning rate annealing, and a $0.1$ weight decay for 100,000 training iterations.}
   \label{tab:grid_search_v3_100k}
 \end{table}
 
-\begin{table}[!htbp]
-  \centering
-  \input{csvs/final_v1_100k.tex}
-  
-  \caption{Model comparison with final hyperparameters over 100,000 train iterations.}
-  \label{tab:final_v1_100k}
-\end{table}
+The data here indicate mixed results. \mc~tends to do better with larger batch sizes, while \ab~and \cp~do better with a smaller batch size. The learning rates differed from game to game as well. With no significant trends in performance, we opted to use a batch size of 128 to increase learning speed and a learning rate of $0.001$ to prevent divergence. Our final hyperparameters, used in the rest of the paper, are available in Table \ref{tab:grid_search_hyperparameters}.
 
-\subsection{Double Deep Q-Network}
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{c|c}
+        \toprule
+        Hyperparameter & Value \\ \midrule
+        Model & DDQN \\
+        Frame skip & $3$ \\
+        Update frequency & $4$ \\
+        Training updates & $100000$ \\
+        Replay memory size & $10000$ \\
+        Target update & N/A \\
+        Learning rate & $0.001$ \\
+        Learning rate annealing & Yes \\
+        Batch size & $128$ \\
+        Loss function & Huber loss \\
+        Regularization & $0.1$ \\
+        \bottomrule
+    \end{tabular}
+    \caption{The hyperparameters found by our grid search and used for the PCA variants of the (D)DQN.}
+    \label{tab:grid_search_hyperparameters}
+\end{table}
 
 \subsection{PCA Networks}
 
-See Figures \ref{fig:CartPole_DDQN-GS_rewards_losses}--\ref{fig:MountainCar_DDQCNN-PCA-Mini_rewards_losses} for a comparison of the PCA networks tested. These model comparison results generalized quite well to other hyperparameter settings.
+With a strong DDQN-GS model selected as our new baseline, we then began to test the performance of PCA-based models. These model comparison results generalized quite well to other hyperparameter settings. See Figures \ref{fig:CartPole_DDQN-GS_rewards_losses} to \ref{fig:MountainCar_DDQCNN-PCA-Mini_rewards_losses} for a graphical comparison of the PCA networks tested. Table \ref{tab:final_v1_100k} contains the results for the plots.
 
 \foreach \game in {CartPole, Acrobot, MountainCar}
-{
+{   
     \foreach \model in {DDQN-GS, DDQN-PCA, DDQCNN-PCA, DDQCNN-PCA-Mini}
     {
         \begin{figure}[!ht]
@@ -368,24 +401,45 @@ See Figures \ref{fig:CartPole_DDQN-GS_rewards_losses}--\ref{fig:MountainCar_DDQC
     }
 }
 
-We performed several grid searches to find hyperparameters that worked for all three games and to get a general feel for the parameter space. (we found that CartPole preferred a larger learning rate)
+\begin{table}[!ht]
+  \centering
+  \input{csvs/final_v1_100k.tex}
+  
+  \caption{Model comparison with final hyperparameters over 100,000 training iterations.}
+  \label{tab:final_v1_100k}
+\end{table}
 
+First, we note that the (D)DQN-PCA model, which does not convolve over an image representation, does relatively poorly in all settings. This is reasonable. Since this model does not account for the structural properties of adjacent pixels as a convolutional neural network does, the model loses a significant amount of information about the image. We then turn our attention to the convolutional PCA versions of the models.
 
-In order to find hyperparameters that worked for all three games, 
+The DDQCNN-PCA model performed surprisingly well for \cp~and \ab, outperforming the DDQN-GS models and generating some of the best scores we ever saw in our experiments. Unfortunately these results were not replicated in the \mc~game, failing to beat even the random baseline. It seems that \mc~is sensitive to weight initialization, causing unpredictable fluctuations in its performance.
 
-put grid search results here
+What is more surprising is the performance of DDQCNN-PCA-Mini model, being a strong performer in the \mc~setting. We had no expectations that this model would do well. After all, the PCA simply selects the most prominent features in the projected subspace and are \textit{ad hoc} formed into a square image to convolve over without any consideration of the structural integrity of the original image. It may be that the projection yielded features in the reduced space that had high correlation between one another and thus high predictive power, but otherwise, we have little explanation for the model's performance and mention it only as a point of interest for future work. 
 
-Target network is bad etc.
+Despite some PCA variants being high performers in each of the games, many of the remaining PCA models were unable to perform above a random baseline. Upon closer inspection of the reward graphs, we find that several PCA models reached a strong optimum around the middle of the training process, but ended up diverging over time. Overall, we find that PCA is sensitive to divergence, but under the right use cases and the right learning rate annealing and $\epsilon$ decay, PCA is a promising method to increase the performance of a Q-network under short learning time settings.
+
+\subsection{Testing Layer Sizes}
+
+We wanted to be sure that our model's performance was not heavily impacted by the network's architecture. We therefore tested different network architectures for the DDQN-PCA model to see whether there was a significant difference in performance over 100,000 training iterations. See Table \ref{tab:model_selection_ddqn_pca_4} for the results from testing several conventional deep neural network architectures for the DDQN-PCA model.
+
+\begin{table}[!ht]
+  \centering
+  \input{csvs/model_selection_ddqn_pca_4.tex}
+  
+  \caption{Results for from testing several conventional deep neural network architectures for the DDQN-PCA model. All experiments used a Huber loss function, learning rate annealing, a batch size of $128$, a learning rate of $0.001$, and a $0.1$ weight decay for 100,000 training iterations.}
+  \label{tab:model_selection_ddqn_pca_4}
+\end{table}
+
+Unfortunately, despite trying different numbers of layers as well as the number of nodes at each layer, none of the models particularly stood out as a better model than the ones we tried in our final comparison.
+
+\section{Discussion}
+
+Throughout this exploratory project, we found that learning o play games from image data alone makes each problem significantly harder. While we had the option to read in metadata about each state such as the pole's angle or the car's velocity, we decided that the best way to standardize the performance of our model was to ensure that each game fed in the same type of data, namely pixels. Note that there are many simulations online that claim to learn better scores for \cp~even just by using pixel data, but these simulations take advantage of cropping the whitespace around the cart, drastically improving the performance of the convolution.
+
+An interesting problem that we encountered while testing different models was that there was little correlation between the loss function and the performance of the model. Indeed, more often than not, the loss function continuously shoot up as the simulations ran without ever converging toward an actual minimization.
 
 comment on how the loss isn't converging
 
 sample Q values don't really make sense, especially for \cp
- 
-MSE was bad compared to Huber - unstable
-
-Adam, even though it's a popular optimizer, was bad (not included; used RMSProp instead)
-
-learning rates differ for different games (\cp~wants a higher learning rate, for instance)
 
 in order to get these results, we did some inspection and regressed means on categorical variables to see which hyperparameters were good
 
@@ -393,11 +447,6 @@ including weight decay and annealing help with stability
 
 make sure to mention that 50 is a good average
 
-None of the games performed well with DDQN-PCA, which simply inputs the reduced state space through a conventional deep neural network. This is perhaps 
-
-\todo{talk about results here\dots}
-
-\section{Discussion}
 \section{Conclusion}
 
 \subsection{Further Directions}
