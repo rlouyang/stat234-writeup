@@ -33,66 +33,49 @@
 
 \section{Introduction}
 
-Current methods of Q-learning with deep networks are inhibited by the
-large state space inherent in processing images. The state-of-the-art
-methods used in recent papers \cite{mnih2013playing, mnih2015human, van2016deep} require often infeasible
-amounts of computational power, time, and data. Although convolutional
-neural networks theoretically reduce the learning time by restricting
-the size of the network and accounting for structural information in
-the data, it is still difficult to learn a good policy in a time- and
-data-efficient manner. We experiment with reducing state space
-dimensionality required by deep Q-networks (DQNs) by applying
-principal component analysis (PCA) to improve learned policies and
-training times on a variety of OpenAI games. Although state-space reduction has previously been studied in reinforcement learning \cite{kishima2013reduction}, use of PCA in reducing state spaces, particularly for neural networks, has not previously been considered.
+Current methods of Q-learning with deep neural networks are inhibited by the large state space inherent in processing images. The state-of-the-art methods used in recent papers \cite{mnih2013playing, mnih2015human, van2016deep} require often infeasible amounts of computational power, time, and data. Although convolutional neural networks theoretically reduce the learning time by restricting the size of the network and accounting for structural information in the data, it is still difficult to learn a good policy in a time- and data-efficient manner. We experiment with reducing the state space dimensionality required by deep Q-networks (DQNs) by applying principal component analysis (PCA) to improve learned policies and training times on a variety of OpenAI games. Although state-space reduction has previously been studied in reinforcement learning \cite{kishima2013reduction}, use of PCA in reducing state spaces, particularly for neural networks, has not previously been considered. 
 
-In addition, we provide an extensible and easy-to-use software
-framework to test various types of agents and Q-networks, even for
-games not tested in this paper (such as Atari games).
+In addition, we provide an extensible and easy-to-use software framework to test various types of agents and Q-networks, even for games not tested in this paper (such as Atari games).
 
 \section{Background}
 
 \subsection{MDP Overview}
 
 We will briefly describe the general Markov Decision Process (MDP)
-framework. Define MDP to be:
+framework. Define an MDP to be a tuple consisting of the following elements:
 
 \begin{itemize}
-\item $\mathcal{S}$, the set of states. In our usage, each state $s$
-is a transformation of the games' screens, which are matrices of pixel
-values.
-  
-\item $\mathcal{A}$, the set of actions. The available actions $a$
-depend on the setting of the game. In the problems of interest, we
-consider games with discrete, relatively simple action spaces.
-  
-\item $r: \mathcal{S} \times \mathcal{A} \to \mathbb{R}$, the reward
-function. A reward $r_t(s_t, a_t)$ is given to the agent after an
-action $a_t$ is taken at state $s_t$. The reward is often a complex
-function. If we knew the reward function, we would easily know which
-action to take at any state $s_t$ and timestep $t$.
-  
-\item $p: \mathcal{S} \times \mathcal{A} \times \mathcal{S} \to
-\mathbb{R}$, the transition probabilities. The agent moves from $s_t$
-to $s_{t+1}$ after taking action $a$ with probability $p(s_{t+1} |s_t,
-a_t)$. In our games, transitions are deterministic, so probabilities
-are either $0$ or $1$.
-  
-\item $\gamma \in [0, 1]$, the discount factor. $\gamma$ discounts
-  future rewards at a constant, compounded rate.
-
-  In reinforcement learning, we seek to learn a policy
-  $\pi: \mathcal{S} \to \mathcal{A}$ that maximizes the expected
-  discounted sum of future rewards at a given
-  state:
-  $$R_t = \mathbb{E}\left[\sum_{i=t}^\infty \gamma^{i-t} r_{i}|s_{t-1}\right]$$
-
-  We define the Q-function under a policy $\pi$ as the expected
-  discounted sum of future rewards given a state and desired action:
-  $$Q^\pi(s_t, a_t) = \mathbb{E}\left[R_t | s_{t-1}, a_{t-1} \right]$$
-
-  The optimal Q-function has been proven to satisfy the Bellman equation:
-
-  $$Q^\star (s, a) = r(s, a) + \gamma \max_{a' \in \mathcal{A}} Q^\star(s', a')$$
+    \item $\mathcal{S}$, the set of states. In our usage, each state $s \in \mathcal{S}$ is a transformation of the game screens, which are matrices of pixel values.
+      
+    \item $\mathcal{A}$, the set of actions. The available actions $a \in \mathcal{A}$
+    depend on the setting of the game. In the problems of interest, we
+    consider games with discrete, relatively simple action spaces.
+      
+    \item $r: \mathcal{S} \times \mathcal{A} \to \mathbb{R}$, the reward
+    function. A reward $r_t(s_t, a_t)$ is given to the agent after an
+    action $a_t$ is taken at state $s_t$. The reward is often a complex
+    function. If we knew the reward function, we would easily know which
+    action to take at any state $s_t$ and timestep $t$.
+      
+    \item $p: \mathcal{S} \times \mathcal{A} \times \mathcal{S} \to
+    \mathbb{R}$, the transition probabilities. After taking action $a$, the agent moves from $s_t$ to $s_{t+1}$ with probability $p(s_{t+1} |s_t,
+    a_t)$. In our games, transitions are deterministic, so probabilities
+    are either $0$ or $1$.
+      
+    \item $\gamma \in [0, 1]$, the discount factor. $\gamma$ discounts
+    future rewards at a constant, compounded rate.
+    
+    In reinforcement learning, we seek to learn a policy
+    $\pi: \mathcal{S} \to \mathcal{A}$ that maximizes the expected
+    discounted sum of future rewards at a given state:
+    $$R_t = \mathbb{E}\left[\sum_{i=t}^\infty \gamma^{i-t} r_{i}|s_{t-1}\right]$$
+    
+    We define the Q-function under a policy $\pi$ as the expected
+    discounted sum of future rewards given a state and desired action:
+    $$Q^\pi(s_t, a_t) = \mathbb{E}\left[R_t | s_{t-1}, a_{t-1} \right]$$
+    
+    The optimal Q-function has been proven to satisfy the Bellman equation:
+    $$Q^\star(s, a) = r(s, a) + \gamma \max_{a' \in \mathcal{A}} Q^\star(s', a')$$
 \end{itemize}
 
 
@@ -100,9 +83,9 @@ are either $0$ or $1$.
 
 We now briefly discuss the application of deep neural networks to reinforcement learning. The most common use of deep neural networks is to model the Q-function. These deep Q-networks (DQNs) take in a transformed image input $s$, passes it through multiple layers, and returns a vector consisting of the estimated $Q(s, a)$ for all available actions $a \in \mathcal{A}$. 
 
-Current state-of-the-art models \cite{mnih2013playing, mnih2015human} use deep convolutional neural networks (CNNs) as models for the Q-function; these DQNs capitalize on the structure of image data -- for example, correlations between nearby pixels -- to make Q estimates. Unfortunately, DQNs typically require a large number of parameters, thus consuming large amounts of computational resources, both in terms of time and space.
+Current state-of-the-art models \cite{mnih2013playing, mnih2015human} use deep convolutional neural networks (CNNs) as models for the Q-function; these DQNs capitalize on the structure of image data -- for example, correlations between nearby pixels -- to make Q estimates. Unfortunately, DQNs typically require a large number of parameters, thus consuming large amounts of computational resources, in terms of both time and space.
 
-Double DQNs (DDQNs) \cite{van2016deep} are very similar to regular DQNs. However, instead of using the same network to obtain the target value for minibatch updates as in a regular DQN, the DDQN randomly selects one of the two networks to update and uses the other network to obtain the target value.
+Double DQNs (DDQNs) \cite{van2016deep} are very similar to regular DQNs. However, instead of using the same network to obtain the target value for minibatch updates as in a regular DQN, the DDQN randomly selects one of two networks to update and uses the other network to obtain the target value.
 
 \todo{maybe math}
 
@@ -218,7 +201,7 @@ We tested many configurations of hyperparameters, varying the following:
     
     \item[Target update] If the model uses a target network \cite{mnih2015human}, this represents the number of trains between each target network update. Each update involves setting the target network parameters to the main network parameters.
     
-    \item[Learning rate] The (initial) learning rate used by the optimizer. A higher rate results in a model that learns faster but may diverge.
+    \item[Learning rate] The (initial) learning rate used by the optimizer. A higher learning rate results in a model that learns faster but may diverge.
     
     \item[Learning rate annealing] Whether the learning rate is annealed to a smaller value. Learning rate annealing helps decrease the likelihood of policy divergence. The learning rate anneals according to the equation $$\alpha_t = \alpha_\text{initial} \max\left(\exp\left(-\frac{t}{\lambda_\alpha}\right), \frac{0.0005}{\alpha_\text{initial}}\right),$$ where $t$ is the number of minibatch training updates that have already occurred, and $\lambda$ is the decay rate, so that the learning rate anneals exponentially from its initial value to a final value of $0.0005$.
     
@@ -442,7 +425,7 @@ Throughout this exploratory project, we found that learning to play games from i
 
 One thing not discussed in great detail was how we decided upon which parameters we chose at every step. In addition to empirical evaluations, we also built generalized linear models on our hyperparameters, treating them as categorical variables and predicting the mean. By examining the coefficients of the model this gave us a rough estimate of how different features were correlated with the mean.
 
-An interesting problem that we encountered while testing different models was that there was little correlation between the loss function and the performance of the model. Indeed, more often than not, the loss function continuously shoot up as the simulations ran without ever converging toward an actual minimization. Typically, this indicates that we are underfitting our model, since the model is never able to minimize the loss, however online discussions claim that this is not a problem in a reinforcement learning setting. \todo{citation needed}
+An interesting problem that we encountered while testing different models was that there was little correlation between the loss function and the performance of the model. Indeed, more often than not, the loss function continuously shoot up as the simulations ran without ever converging toward an actual minimization. Typically, this indicates that we are underfitting our model, since the model is never able to minimize the loss; however, online discussions claim that this is not a problem in a reinforcement learning setting. \todo{citation needed}
 
 During our modeling, we tried keeping track of sample Q values as the model trained. Over time, we expected the sample Q to increase as the value of one action over another became more apparent. While the Q-value did tend to increase for the sample, the values tended to explode to unreasonably large numbers. This seemed to be a sign that our weights were exploding in our neural network, but after clamping our nodes' values to be between $-1$ and $1$, we were unable to get more reasonable estimates of sample Q-values. 
 
