@@ -167,7 +167,7 @@ In our experiments, we used four different types of models, each of which includ
 
 For the (D)DQCNN and (D)DQCNN-PCA models, we kept our network structure similar to \cite{mnih2013playing} and \cite{mnih2015human} by using three hidden layers in each network. These DQNs take in an $80 \times 80$ grayscale image. Each hidden layer in the network convolves the previous layer's output into multiple filters, followed by a batch normalization and a leaky ReLU with $\alpha = 0.001$ to prevent dead nodes. The first layer convolves $8$ $8 \times 8$ filters with stride $4$; the second layer convolves $16$ $4 \times 4$ filters with stride $2$; the final hidden layer convolves $16$ $4 \times 4$ filters, this time with stride $1$. A max pooling with kernel size $2$ is then applied to reduce the dimensionality of the output. The final layer is fully connected and maps linearly to the number of actions available. For instance, since \cp~contains two actions at any time, the output of the neural network contains two nodes. This structure saves time when forwarding through the network, since a single forward pass for a given state $s$ gives $\hat{Q}_\text{network}(s, a)$ for all $a \in \mathcal{A}$.
 
-To keep the models relatively similar in size, we kept the number of parameters for each model as close as possible. For the (D)DQN-PCA model, we tried a variety of network architectures, varying the number of layers as well as the number of nodes in each layer. 
+To keep the models relatively similar in size, we kept the number of parameters for each model as close as possible. For the (D)DQN-PCA model, we tested a variety of network architectures, varying the number of layers as well as the number of nodes in each layer. 
 
 For the (D)DQCNN-PCA-Mini model, we kept the rough network structure the same as our original models. However, to account for the smaller image size, we reduced the kernel size to 4 and the stride to 1 for all layers.
 
@@ -317,8 +317,7 @@ Again, we see that DDQN-GSs tend to outperform DQN-GSs. The learning rate, howev
 
 \subsubsection{Third Grid Search (100,000 Iterations)}
 
-By this point, we established that DDQCNNs tended to outperform DQCNNs, so we then explored hyperparameter configurations that yielded good performance over $100,000$ iterations. We then performed a grid search, varying the batch size and learning rate
-varied batch size, learning rate
+By this point, we established that DDQCNNs tended to outperform DQCNNs, so we then explored hyperparameter configurations that yielded good performance over $100,000$ iterations. We then performed a grid search, varying the batch size and learning rate. The results can be found in \ref{tab:grid_search_v3_100k}.
 
 \begin{table}[!htbp]
   \footnotesize
@@ -329,15 +328,7 @@ varied batch size, learning rate
   \label{tab:grid_search_v3_100k}
 \end{table}
 
-\begin{table}[!htbp]
-  \centering
-  \input{csvs/final_v1_100k.tex}
-  
-  \caption{Model comparison with final hyperparameters over $100,000$ training iterations.}
-  \label{tab:final_v1_100k}
-\end{table}
-
-Our final hyperparameters, used in the rest of the paper, are available in Table \ref{tab:grid_search_hyperparameters}.
+The data here indicate mixed results. \mc~tends to do better with larger batch sizes, while \ab~and \cp~do better with a smaller batch size. The learning rates differed from game to game as well. With no significant trends in performance, we opted to use a batch size of 128 to increase learning speed and a learning rate of $0.001$ to prevent divergence. Our final hyperparameters, used in the rest of the paper, are available in Table \ref{tab:grid_search_hyperparameters}.
 
 \begin{table}[!htbp]
     \centering
@@ -361,19 +352,29 @@ Our final hyperparameters, used in the rest of the paper, are available in Table
     \label{tab:grid_search_hyperparameters}
 \end{table}
 
-\subsection{PCA Networks}
+\subsection{Testing Layer Sizes}
 
-See Figures \ref{fig:CartPole_DDQN-GS_rewards_losses}--\ref{fig:MountainCar_DDQCNN-PCA-Mini_rewards_losses} for a comparison of the PCA networks tested. These model comparison results generalized quite well to other hyperparameter settings.
-
-See Table \ref{tab:model_selection_ddqn_pca_4} for testing a conventional deep neural network \todo{something}
+We wanted to be sure that See Table \ref{tab:model_selection_ddqn_pca_4} for the results from testing several conventional deep neural network architectures for the DDQN-PCA model.
 
 \begin{table}[!htbp]
   \footnotesize
   \centering
   \input{csvs/model_selection_ddqn_pca_4.tex}
   
-  \caption{Results for model selection of network structure of DDQN-PCA, using Huber loss, learning rate annealing, and a $0.1$ weight decay for $100,000$ training iterations.}
+  \caption{Results for from testing several conventional deep neural network architectures for the DDQN-PCA model. All experiments used a Huber loss function, learning rate annealing, a batch size of $128$, a learning rate of $0.001$, and a $0.1$ weight decay for $100,000$ training iterations.}
   \label{tab:model_selection_ddqn_pca_4}
+\end{table}
+
+\subsection{PCA Networks}
+
+With a strong DDQN-GS model selected as our new baseline, we then began to test the performance of PCA-based models. See Figures \ref{fig:CartPole_DDQN-GS_rewards_losses} to \ref{fig:MountainCar_DDQCNN-PCA-Mini_rewards_losses} for a graphical comparison of the PCA networks tested. These model comparison results generalized quite well to other hyperparameter settings.
+
+\begin{table}[!htbp]
+  \centering
+  \input{csvs/final_v1_100k.tex}
+  
+  \caption{Model comparison with final hyperparameters over $100,000$ training iterations.}
+  \label{tab:final_v1_100k}
 \end{table}
 
 \foreach \game in {CartPole, Acrobot, MountainCar}
@@ -393,15 +394,6 @@ See Table \ref{tab:model_selection_ddqn_pca_4} for testing a conventional deep n
         \end{figure}
     }
 }
-
-We performed several grid searches to find hyperparameters that worked for all three games and to get a general feel for the parameter space. (we found that CartPole preferred a larger learning rate)
-
-
-In order to find hyperparameters that worked for all three games, 
-
-put grid search results here
-
-Target network is bad etc.
 
 comment on how the loss isn't converging
 
