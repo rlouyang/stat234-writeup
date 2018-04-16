@@ -127,15 +127,15 @@ OpenAI Gym \cite{brockman2016openai} offers a set of many standard games on whic
 \begin{figure}[!ht]
 \foreach \imagetype in {original, processed}
 {
-    \subfloat[Sample \imagetype~image of the \cp~game screen. \label{subfig:cartpole_\imagetype}]{%
+    \subfloat[Sample \imagetype~image of the \cp~game screen. \label{subfig:CartPole_\imagetype}]{%
         \includegraphics[width=0.30\textwidth]{game_images/CartPole_\imagetype.pdf}
     }
     \hfill
-    \subfloat[Sample \imagetype~image of the \ab~game screen. \label{subfig:acrobot_\imagetype}]{%
+    \subfloat[Sample \imagetype~image of the \ab~game screen. \label{subfig:Acrobot_\imagetype}]{%
         \includegraphics[width=0.30\textwidth]{game_images/Acrobot_\imagetype.pdf}
     }
     \hfill
-    \subfloat[Sample PCA image of the \mc~game screen. \label{subfig:mountaincar_\imagetype}]{%
+    \subfloat[Sample PCA image of the \mc~game screen. \label{subfig:MountainCar_\imagetype}]{%
         \includegraphics[width=0.30\textwidth]{game_images/MountainCar_\imagetype.pdf}
     }
 }
@@ -262,24 +262,25 @@ The full set of raw data, metadata, and plots are available at this \href{https:
 
 \subsection{Random Policy}
 
-As a baseline, we ran a random policy on each game, with results in Figure \ref{fig:random}. The average rewards and durations for the three games are available in Table \ref{tab:random_rewards}. With this initial goal in mind, we proceeded to test different model architectures and hyperparameter settings to achieve the best possible empirical results over all three games.
+As a baseline, we ran a random policy on each game, with results in Figures \ref{fig:CartPole_random}, \ref{fig:Acrobot_random}, and \ref{fig:MountainCar_random}. The average rewards and durations for the three games are available in Table \ref{tab:random_rewards}. With this initial goal in mind, we proceeded to test different model architectures and hyperparameter settings to achieve the best possible empirical results over all three games.
 
-\begin{figure}[!ht]
 \foreach \game in {CartPole, Acrobot, MountainCar}
 {
-    \subfloat[Rewards for a random policy in the \game~game. \label{subfig:\game_NoTraining_Random_rewards}]{%
-        \includegraphics[width=0.45\textwidth]{\game/\game_NoTraining_Random_rewards.pdf}
-    }
-    \hfill
-    \subfloat[Durations for a random policy in the \game~game.\label{subfig:\game_NoTraining_Random_duraions}]{%
-        \includegraphics[width=0.45\textwidth]{\game/\game_NoTraining_Random_durations.pdf}
-    }
+    \begin{figure}[!ht]
+        \subfloat[Rewards for a random policy in the \texttt{\game}~game. \label{subfig:\game_NoTraining_Random_rewards}]{%
+            \includegraphics[width=0.45\textwidth]{\game/\game_NoTraining_Random_rewards.pdf}
+        }
+        \hfill
+        \subfloat[Durations for a random policy in the \texttt{\game}~game.\label{subfig:\game_NoTraining_Random_duraions}]{%
+            \includegraphics[width=0.45\textwidth]{\game/\game_NoTraining_Random_durations.pdf}
+        }
+    \caption{Baseline results from the \texttt{\game}~game from OpenAI Gym under a random policy.}
+    \label{fig:\game_random}
+    \end{figure}
 }
-\caption{Baseline results from several classic control games from OpenAI Gym under a random policy and model.}
-\label{fig:random}
-\end{figure}
 
 \begin{table}[!ht]
+    \footnotesize
     \centering
     \begin{tabular}{c|cc}
         \toprule
@@ -331,12 +332,12 @@ Here, we observe strong performance by DDQN-GSs over DQN-GSs and by using a Hube
 Setting the optimizer, loss function, and target update to RMSProp, Huber loss, and False, respectively, we performed a second grid search over 50,000 training iterations to tune the learning rate and weight decay. The results can be found in Table \ref{tab:grid_search_v2_50k}.
 
 \begin{table}[!ht]
-  \footnotesize
-  \centering
-  \input{csvs/grid_search_v2_50k.tex}
-  
-  \caption{Top fifteen parameter-tuned mean rewards per game for our second grid search. All experiments used a Huber loss, learning rate annealing, no target update, and the RMSProp optimizer for 50,000 training steps.}
-  \label{tab:grid_search_v2_50k}
+    \footnotesize
+    \centering
+    \input{csvs/grid_search_v2_50k.tex}
+    
+    \caption{Top fifteen parameter-tuned mean rewards per game for our second grid search. All experiments used a Huber loss, learning rate annealing, no target update, and the RMSProp optimizer for 50,000 training steps.}
+    \label{tab:grid_search_v2_50k}
 \end{table}
 
 \mc~and \ab~continued to perform well with more training time for the best models, though we began to see evidence of high variance in performance for these games. Both had the worst models getting average scores near the level of randomness. In these games, episodes are not completed until the agent succeeds at reaching above a certain height or climbing up the mountain. As a result, if an agent learns a poor policy early on, the agent could spend all of its training iterations receiving $-1$ reward with no positive feedback. To help mitigate this issue, we capped the number of training iterations per episode to 20,000 with the intent to expose the agent to more positive states and to speed up learning time. If an agent reaches a duration of 20,000, we already know that the agent does a poor job of learning a good policy and can afford to ignore the model, since in our random policy experiments, episode durations never surpassed 16,000 and rarely more than 10,000.
@@ -348,16 +349,18 @@ Again, we see that DDQN-GSs tend to outperform DQN-GSs. The learning rate, howev
 By this point, we established that DDQCNNs tended to outperform DQCNNs, so we then explored hyperparameter configurations that yielded good performance over 100,000 iterations. We then performed a grid search, varying the batch size and learning rate. The results can be found in \ref{tab:grid_search_v3_100k}.
 
 \begin{table}[!ht]
-  \centering
-  \input{csvs/grid_search_v3_100k.tex}
-  
-  \caption{Complete results for our third grid search, sorted by mean reward. All experiments used the DDQN-GS model with a Huber loss function, learning rate annealing, and a $0.1$ weight decay for 100,000 training iterations.}
-  \label{tab:grid_search_v3_100k}
+    \footnotesize
+    \centering
+    \input{csvs/grid_search_v3_100k.tex}
+    
+    \caption{Complete results for our third grid search, sorted by mean reward. All experiments used the DDQN-GS model with a Huber loss function, learning rate annealing, and a $0.1$ weight decay for 100,000 training iterations.}
+    \label{tab:grid_search_v3_100k}
 \end{table}
 
 The data here indicate mixed results. \mc~tends to do better with larger batch sizes, while \ab~and \cp~do better with a smaller batch size. The learning rates differed from game to game as well. With no significant trends in performance, we opted to use a batch size of 128 to increase learning speed and a learning rate of $0.001$ to prevent divergence. Our final hyperparameters, used in the rest of the paper, are available in Table \ref{tab:grid_search_hyperparameters}.
 
 \begin{table}[!ht]
+    \footnotesize
     \centering
     \begin{tabular}{c|c}
         \toprule
@@ -388,25 +391,26 @@ With a strong DDQN-GS model selected as our new baseline, we then began to test 
     \foreach \model in {DDQN-GS, DDQN-PCA, DDQCNN-PCA, DDQCNN-PCA-Mini}
     {
         \begin{figure}[!ht]
-            \subfloat[Rewards for the \model~model in the \game~game. \label{subfig:\game_\model_EpsilonGreedy_rewards_cpu}]{%
+            \subfloat[Rewards for the \model~model in the \texttt{\game}~game. \label{subfig:\game_\model_EpsilonGreedy_rewards_cpu}]{%
                 \includegraphics[width=0.45\textwidth]{\game/\game_\model_EpsilonGreedy_rewards_cpu.pdf}
             }
             \hfill
-            \subfloat[Losses for the \model~model in the \game~game. \label{subfig:\game_\model_EpsilonGreedy_losses_cpu}]{%
+            \subfloat[Losses for the \model~model in the \texttt{\game}~game. \label{subfig:\game_\model_EpsilonGreedy_losses_cpu}]{%
                 \includegraphics[width=0.45\textwidth]{\game/\game_\model_EpsilonGreedy_losses_cpu.pdf}
             }
-            \caption{Rewards and losses for the \model~model in the \game~game.}
+            \caption{Rewards and losses for the \model~model in the \texttt{\game}~game.}
             \label{fig:\game_\model_rewards_losses}
         \end{figure}
     }
 }
 
 \begin{table}[!ht]
-  \centering
-  \input{csvs/final_v1_100k.tex}
-  
-  \caption{Model comparison with final hyperparameters over 100,000 training iterations.}
-  \label{tab:final_v1_100k}
+    \footnotesize
+    \centering
+    \input{csvs/final_v1_100k.tex}
+    
+    \caption{Model comparison with final hyperparameters over 100,000 training iterations.}
+    \label{tab:final_v1_100k}
 \end{table}
 
 First, we note that the (D)DQN-PCA model, which does not convolve over an image representation, does relatively poorly in all settings. This is reasonable. Since this model does not account for the structural properties of adjacent pixels as a convolutional neural network does, the model loses a significant amount of information about the image. We then turn our attention to the convolutional PCA versions of the models.
@@ -422,40 +426,35 @@ Despite some PCA variants being high performers in each of the games, many of th
 We wanted to be sure that our model's performance was not heavily impacted by the network's architecture. We therefore tested different network architectures for the DDQN-PCA model to see whether there was a significant difference in performance over 100,000 training iterations. See Table \ref{tab:model_selection_ddqn_pca_4} for the results from testing several conventional deep neural network architectures for the DDQN-PCA model.
 
 \begin{table}[!ht]
-  \centering
-  \input{csvs/model_selection_ddqn_pca_4.tex}
-  
-  \caption{Results for from testing several conventional deep neural network architectures for the DDQN-PCA model. All experiments used a Huber loss function, learning rate annealing, a batch size of $128$, a learning rate of $0.001$, and a $0.1$ weight decay for 100,000 training iterations.}
-  \label{tab:model_selection_ddqn_pca_4}
+    \footnotesize
+    \centering
+    \input{csvs/model_selection_ddqn_pca_4.tex}
+    
+    \caption{Results for from testing several conventional deep neural network architectures for the DDQN-PCA model. All experiments used a Huber loss function, learning rate annealing, a batch size of $128$, a learning rate of $0.001$, and a $0.1$ weight decay for 100,000 training iterations.}
+    \label{tab:model_selection_ddqn_pca_4}
 \end{table}
 
 Unfortunately, despite trying different numbers of layers as well as the number of nodes at each layer, none of the models particularly stood out as a better model than the ones we tried in our final comparison.
 
-\section{Discussion}
-
-Throughout this exploratory project, we found that learning o play games from image data alone makes each problem significantly harder. While we had the option to read in metadata about each state such as the pole's angle or the car's velocity, we decided that the best way to standardize the performance of our model was to ensure that each game fed in the same type of data, namely pixels. Note that there are many simulations online that claim to learn better scores for \cp~even just by using pixel data, but these simulations take advantage of cropping the whitespace around the cart, drastically improving the performance of the convolution.
-
-An interesting problem that we encountered while testing different models was that there was little correlation between the loss function and the performance of the model. Indeed, more often than not, the loss function continuously shoot up as the simulations ran without ever converging toward an actual minimization.
-
-comment on how the loss isn't converging
-
-sample Q values don't really make sense, especially for \cp
-
-in order to get these results, we did some inspection and regressed means on categorical variables to see which hyperparameters were good
-
-including weight decay and annealing help with stability
-
-make sure to mention that 50 is a good average
-
 \section{Conclusion}
+
+Throughout this exploratory project, we found that learning to play games from image data alone makes each problem significantly harder. While we had the option to read in metadata about each state such as the pole's angle or the car's velocity, we decided that the best way to standardize the performance of our model was to ensure that each game fed in the same type of data, namely pixels. Note that there are many simulations online that claim to learn better scores for \cp~even just by using pixel data, but these simulations take advantage of cropping the whitespace around the cart, drastically improving the performance of the convolution.
+
+One thing not discussed in great detail was how we decided upon which parameters we chose at every step. In addition to empirical evaluations, we also built generalized linear models on our hyperparameters, treating them as categorical variables and predicting the mean. By examining the coefficients of the model this gave us a rough estimate of how different features were correlated with the mean.
+
+An interesting problem that we encountered while testing different models was that there was little correlation between the loss function and the performance of the model. Indeed, more often than not, the loss function continuously shoot up as the simulations ran without ever converging toward an actual minimization. Typically, this indicates that we are underfitting our model, since the model is never able to minimize the loss, however online discussions claim that this is not a problem in a reinforcement learning setting. \todo{citation needed}
+
+During our modeling, we tried keeping track of sample Q values as the model trained. Over time, we expected the sample Q to increase as the value of one action over another became more apparent. While the Q-value did tend to increase for the sample, the values tended to explode to unreasonably large numbers. This seemed to be a sign that our weights were exploding in our neural network, but after clamping our nodes' values to be between $-1$ and $1$, we were unable to get more reasonable estimates of sample Q-values. 
+
+To conclude, we have built up a robust coding framework to test different Q-function models on a variety of discrete-space OpenAI games. The results seem to show that, though PCA is prone to diverge from optimal performance at times, it appears to also have a reasonable chance to do well in game settings. Perhaps with the right model regularization and network architecture, PCA is a promising way to increase model performance for reinforcement learning by reducing the state space and eliminating the need for the DQN to learn unimportant feature information.
 
 \subsection{Further Directions}
 
 Consider the same for Atari games and others, as long as they have discrete actions. Also try to extend to games with continuous actions with a different type of network architecture. Perhaps a convolutional neural network linked with a network in which actions are the inputs?
 
-We had severely limited computational power and time, so extending the paper using more varied learning rates and annealing schedules could offer better performance. Also computing using GPUs (which were unfortunately not available) rather than CPUs would have been great.
+We had severely limited computational power and time, so extending the paper using more varied learning rates and annealing schedules could offer better performance. Also computing using GPUs (which were unfortunately not available) rather than CPUs would have been a substantial time boost.
 
-Adding Hindsight Experience Replay to \mc
+Adding Hindsight Experience Replay to \mc~would be a good strategy, since \mc~tended to get stuck in suboptimal positions for long periods of time. 
 
 \newpage
 \bibliography{final_project}{}
