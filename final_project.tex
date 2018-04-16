@@ -156,7 +156,7 @@ At each time step, we obtained the RGB (color) mapping of the game screen, resiz
 In our experiments, we used four different types of models, each of which includes the original and double network variants: 
 
 \begin{description}
-    \item[(D)DQCNN] The original model \cite{mnih2013playing, mnih2015human} and variants \cite{van2016deep}. These models convolve images using no extra state-space reduction techniques like PCA.
+    \item[(D)DQCNN] The original model \cite{mnih2013playing, mnih2015human} and variants \cite{van2016deep}. These models convolve images using no extra state-space reduction techniques like PCA. This model is also referred to as (D)DQN-GS, since this is the original grayscale model. We use these two terms interchangeably.
     
     \item[(D)DQN-PCA] These models use a database of 1000 states as training data for PCA and project the pixel features of new states onto the subspace that captures 99\% of the variance. The results is a one-dimensional vector with varying lengths based on the game (100 to 500 features). This vector is passed into a conventional (not convolutional) deep neural network to predict the Q-value.
     
@@ -194,7 +194,7 @@ We tested many configurations of hyperparameters, varying the following:
     
     \item[Batch size] The minibatch size, or the number of transitions used in each training update. The two values tested were $32$ and $128$.
     
-    \item[Loss function] The loss function used in the model. The Huber loss (defined as the $\ell_2$ norm for losses greated than 1 and the $\ell_1$ norm otherwise) and the mean squared error (MSE) loss were the two loss functions considered.
+    \item[Loss function] The loss function used in the model. The Huber loss (defined as the $\ell_2$ norm for losses greater than 1 and the $\ell_1$ norm otherwise) and the mean squared error (MSE) loss were the two loss functions considered.
     
     \item[Regularization] The weight decay in the optimizer. This value typically ranges from $0$ to $1$ and is used to prevent overfitting in our networks.
     
@@ -279,9 +279,9 @@ As a baseline, we ran a random policy on each game. The average rewards and dura
 
 % we should make note of the fact that the statistics are the stats of the latter half of the n_trains iterations
 
-All summary statistics 
+All summary statistics are taken over the second half of the experiment, after the DQN has had time to learn the game and converge.
 
-\subsubsection{First Grid Search}
+\subsubsection{First Grid Search (10,000 Iterations)}
 
 In order to establish a solid set of hyperparameters to which PCA variants of DQNs could be compared, we began our experiments with an initial grid search over the hyperparameters of interest for $10,000$ training steps to eliminate poorly performing hyperparameter settings. We decided to keep the frame skip, update frequency, replay memory size, and agent action selection hyperparameters constant for testing, since grid search sizes increase exponentially in the number of parameters, and varying these settings would vastly increase simulation time and space consumption. Table \ref{tab:grid_search_v1_10k} contains the results of the top fifteen models for each game ordered by performance.
 
@@ -294,42 +294,39 @@ In order to establish a solid set of hyperparameters to which PCA variants of DQ
   \label{tab:grid_search_v1_10k}
 \end{table}
 
-From these results, we already find that our best hyperparameter configurations are beating the random baseline. \mc~was rather difficult to learn, as the final policy seems to depend heavily on the random initialization. With suboptimal hyperparameters, the episodes under a poorly learned policy can extend to tens of thousands of time steps, far more than a random policy. This particular vulnerability to divergence likely occurs because all transitions entered into the replay memory have $r = -1$, creating difficulties in learning. \cp~roughly doubles the duration of the random policy, though the performance has significantly high variance in all models. Finally, \ab~seems to have been learned quite quickly, reaching optimal performance within the 10,000 iterations.
+From these results, we already find that our best hyperparameter configurations are beating the random baseline. \mc~was rather difficult to learn, as the final policy seems to depend heavily on the random initialization. With sub-optimal hyperparameters, the episodes under a poorly learned policy can extend to tens of thousands of time steps, far more than a random policy. This particular vulnerability to divergence likely occurs because all transitions entered into the replay memory have $r = -1$, creating difficulties in learning. \cp~roughly doubles the duration of the random policy, though the performance has significantly high variance in all models. Finally, \ab~seems to have been learned quite quickly, reaching optimal performance within the 10,000 iterations.
 
-From the results, we observe strong performance by DDQNs over DQNs using a Huber loss function and RMSProp. The Adam optimizer failed to learn in almost every simulation. Weight decay yielded mixed results, likely due to the fact that we only allowed the models to run for 10,000 training steps. Additionally, the effectiveness of the learning rate parameters varied significantly with the game; for example, \cp~learns better with a significantly higher learning rate than the other two games. We also saw that including a learning rate annealing slightly improved the overall performance of the algorithms, so we decided to keep the annealing. In theory, a learning rate annealing ought to improve the stability of the model after the model has had time to learn a strong policy. Not displayed in the data is the surprising fact that DQNs with an enabled target update performed significantly worse than DQNs without a target update in that they failed to reach any convergence at all, so we also decided to remove target update functionality for future experiements. With these observations in mind, we proceeded to test another batch of models for a longer period. 
- 
+From the results, we observe strong performance by DDQN-GSs over DQN-GSs and by using a Huber loss function over an MSE loss. The Adam optimizer failed to learn in almost every simulation. Weight decay yielded mixed results, likely due to the fact that we only allowed the models to run for 10,000 training steps. Additionally, the effectiveness of the learning rate parameters varied significantly with the game; for example, \cp~learns better with a significantly higher learning rate than the other two games. We also saw that including a learning rate annealing slightly improved the overall performance of the algorithms, so we decided to keep the annealing. In theory, a learning rate annealing ought to improve the stability of the model after the model has had time to learn a strong policy. Not displayed in the data is the surprising fact that DQN-GSs with an enabled target update performed significantly worse than DQN-GSs without a target update in that they failed to reach any convergence at all, so we also decided to remove target update functionality for future experiments. With these observations in mind, we proceeded to test another batch of models for a longer period. 
 
-\subsubsection{50k Grid Search}
+\subsubsection{Second Grid Search (50,000 Iterations)}
  
- Setting the optimizer, loss function, and target update to RMSProp, Huber loss, and False, respectively, we performed a second grid search over 50,000 training iterations to tune the learning rate and weight decay. The results can be found in \ref{tab:grid_search_v2_50k}.
+Setting the optimizer, loss function, and target update to RMSProp, Huber loss, and False, respectively, we performed a second grid search over $50,000$ training iterations to tune the learning rate and weight decay. The results can be found in Table \ref{tab:grid_search_v2_50k}.
 
 \begin{table}[!htbp]
   \footnotesize
   \centering
   \input{csvs/grid_search_v2_50k.tex}
   
-  \caption{Huber Loss, annealing, no target update, RMSProp, $50,000$ training iterations}
+  \caption{Huber loss, annealing, no target update, RMSProp, $50,000$ training iterations}
   \label{tab:grid_search_v2_50k}
 \end{table}
 
-\mc~and \ab~continued to perform well with more training time for the best models, though we begin to see evidence of high variance in performance for these games. Both had the worst models scor
+\mc~and \ab~continued to perform well with more training time for the best models, though we began to see evidence of high variance in performance for these games. Both had the worst models getting average scores near the level of randomness. In these games, episodes are not completed until the agent succeeds at reaching above a certain height or climbing up the mountain. As a result, if an agent learns a poor policy early on, the agent could spend all of its training iterations receiving $-1$ reward with no positive feedback. To help mitigate this issue, we capped the number of training iterations per episode to $20,000$ with the intent to expose the agent to more positive states and to speed up learning time. If an agent reaches a duration of $20,000$, we already know that the agent does a poor job of learning a good policy and can afford to ignore the model, since in our random policy experiments, episode durations never surpassed $16,000$ and rarely more than $10,000$.
+
+Again, we see that DDQN-GSs tend to outperform DQN-GSs. The learning rate, however, is inconsistent from the first grid search. Here, we find that overall, lower learning rates are preferred over higher ones for longer grid search durations. This is reasonable, since we expect that with a longer training duration, the agent has more time to converge to a good policy, whereas with only $10,000$ iterations, the model needs a higher learning rate to quickly outdo random performance. As a result, we decided to continue even higher training times with lower learning rates. Weight decay does not appear to have a significant impact on the performance of the models, so we decided to take the more conservative option of a regularization coefficient of $0.1$.
+
+\subsubsection{Third Grid Search (100,000 Iterations)}
+
+By this point, we established that DDQCNNs tended to outperform DQCNNs, so we then explored hyperparameter configurations that yielded good performance over $100,000$ iterations. We then performed a grid search, varying the batch size and learning rate
+varied batch size, learning rate
 
 \begin{table}[!htbp]
   \footnotesize
   \centering
   \input{csvs/grid_search_v3_100k.tex}
   
-  \caption{DDQN-GS, Huber Loss, annealing, 0.1 weight decay for $100,000$ training iterations.}
+  \caption{Complete results for our third grid search. All experiments used the DDQN-GS model with a Huber loss function, learning rate annealing, and a $0.1$ weight decay for $100,000$ training iterations.}
   \label{tab:grid_search_v3_100k}
-\end{table}
-
-\begin{table}[!htbp]
-  \footnotesize
-  \centering
-  \input{csvs/model_selection_ddqn_pca_4.tex}
-  
-  \caption{DDQN-PCA, Huber Loss, annealing, 0.1 weight decay for $100,000$ training iterations.}
-  \label{tab:model_selection_ddqn_pca_4}
 \end{table}
 
 \begin{table}[!htbp]
@@ -367,6 +364,17 @@ Our final hyperparameters, used in the rest of the paper, are available in Table
 \subsection{PCA Networks}
 
 See Figures \ref{fig:CartPole_DDQN-GS_rewards_losses}--\ref{fig:MountainCar_DDQCNN-PCA-Mini_rewards_losses} for a comparison of the PCA networks tested. These model comparison results generalized quite well to other hyperparameter settings.
+
+See Table \ref{tab:model_selection_ddqn_pca_4} for testing a conventional deep neural network \todo{something}
+
+\begin{table}[!htbp]
+  \footnotesize
+  \centering
+  \input{csvs/model_selection_ddqn_pca_4.tex}
+  
+  \caption{Results for model selection of network structure of DDQN-PCA, using Huber loss, learning rate annealing, and a $0.1$ weight decay for $100,000$ training iterations.}
+  \label{tab:model_selection_ddqn_pca_4}
+\end{table}
 
 \foreach \game in {CartPole, Acrobot, MountainCar}
 {
