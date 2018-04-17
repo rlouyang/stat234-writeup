@@ -23,14 +23,12 @@
 \author{Michael Ge\thanks{\url{michaelge@college.harvard.edu}} 
         \and 
         Richard Ouyang\thanks{\url{rouyang@college.harvard.edu}}}
-\date{April 24, 2018 \\
-      \small{\url{https://github.com/hahakumquat/stat234-project}}}
+\date{\small{\url{https://github.com/hahakumquat/stat234-project}}\\
+      April 24, 2018}
 
 \begin{document}
 
 \maketitle
-
-\listoftodos
 
 \begin{abstract}
 Deep convolutional neural networks have become a popular approach to estimating Q-value functions in reinforcement learning problems. These deep Q-networks take in entire images as network inputs, often resulting in large state spaces and long learning times. In this paper, we explore the use of principal component analysis to reduce the state space of network inputs. After testing multiple network configurations, we determine that a reduction in uninformative state features through PCA helps improve the performance of deep reinforcement learning.
@@ -93,11 +91,16 @@ framework. Define an MDP to be a tuple consisting of the following elements:
 
 We now briefly discuss the application of deep neural networks to reinforcement learning. The most common use of deep neural networks is to model the Q-function. These deep Q-networks (DQNs) take in a transformed image input $s$, passes it through multiple layers, and returns a vector consisting of the estimated $Q(s, a)$ for all available actions $a \in \mathcal{A}$. 
 
-Current state-of-the-art models \cite{mnih2013playing, mnih2015human} use deep convolutional neural networks (CNNs) as models for the Q-function; these DQNs capitalize on the structure of image data -- for example, correlations between nearby pixels -- to make Q estimates. Unfortunately, DQNs typically require a large number of parameters, thus consuming large amounts of computational resources, in terms of both time and space.
+Current state-of-the-art models \cite{mnih2013playing, mnih2015human} use deep convolutional neural networks (CNNs) as models for the Q-function; these DQNs capitalize on the structure of image data -- for example, correlations between nearby pixels -- to make Q estimates. Unfortunately, DQNs typically require a large number of parameters, thus consuming large amounts of computational resources, in terms of both time and space. More information about the structure of CNNs is available in Figure \ref{fig:cnn}.
 
 Double DQNs (DDQNs) \cite{van2016deep} are very similar to regular DQNs. However, instead of using the same network to obtain the target value for minibatch updates as in a regular DQN, the DDQN randomly selects one of two networks to update and uses the other network to obtain the target value.
 
-\todo{put image in}
+\begin{figure*}
+    \centering
+    \includegraphics[trim={0 1cm 0 1cm}, clip, width=0.95\textwidth]{cnn.pdf}
+    \caption{A visualization of the network structure of a convolutional neural network. The input is the image, which is convolved through several layers, each of which contains several filters. The result is then shrunk through a max pooling layer and passed through a fully connected linear layer before being output as Q-values for each action in the action space.}
+    \label{fig:cnn}
+\end{figure*}
 
 \subsection{Principal Component Analysis}
 
