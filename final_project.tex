@@ -168,7 +168,7 @@ In our experiments, we used four different types of models, each of which includ
     
     \item[(D)DQN-PCA] These models use a database of 1000 states as training data for PCA and project the pixel features of new states onto the subspace that captures 99\% of the variance. The results is a one-dimensional vector with varying lengths based on the game (100 to 500 features). This vector is passed into a conventional (not convolutional) deep neural network to predict the Q-value.
     
-    \item[(D)DQCNN-PCA] These models perform PCA as in the (D)DQN-PCA model but then invert the PCA transformation in order to convert each image back to its original space. The result is a simplified $80 \times 80$ image, which is then input into a model with the same network structure as the original (D)DQN.
+    \item[(D)DQCNN-PCA] These models also perform PCA; however, the (D)DQCNN-PCA models then invert the PCA transformation, converting each transformed image back to its original space. The result is a simplified $80 \times 80$ image, which is then input into a model with the same network structure as the original (D)DQN.
     
     \item[(D)DQCNN-PCA-Mini] Out of curiosity, we included one additional model type, which takes the one-dimensional vector obtained from the PCA transformation and reshapes it into a square (zero padding if necessary). We then convolved the resulting ``image'' through a smaller neural network to predict the Q-value for each state. Although PCA strips correlation between nearby pixels, we were interested in investigating whether the reduced dimensionality preserved some structure between nearby values.
 \end{description}
