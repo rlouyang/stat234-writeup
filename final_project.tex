@@ -65,7 +65,7 @@ framework. Define an MDP to be a tuple consisting of the following elements:
     action to take at any state $s_t$ and timestep $t$.
       
     \item $p: \mathcal{S} \times \mathcal{A} \times \mathcal{S} \to
-    \mathbb{R}$, the transition probabilities. After taking action $a$, the agent moves from $s_t$ to $s_{t+1}$ with probability $p(s_{t+1} |s_t,
+    \mathbb{R}$, the transition probabilities. After taking action $a$, the agent moves from state $s_t$ to state $s_{t+1}$ with probability $p(s_{t+1} |s_t,
     a_t)$. In our games, transitions are deterministic, so probabilities
     are either $0$ or $1$.
       
@@ -98,7 +98,7 @@ Double DQNs (DDQNs) \cite{van2016deep} are very similar to regular DQNs. However
 
 \subsection{Principal Component Analysis}
 
-Principal component analysis (PCA) is a dimensionality reduction technique that linearly projects the original features into a smaller dimension. PCA chooses the axes with the most variance to construct this smaller space. The resulting features have zero correlation with one another. In interpreting images, PCA keeps transformations of the most variable pixels, eliminating the information contained in pixels with very little variance.
+Principal component analysis (PCA) is a dimensionality reduction technique that orthogonally projects the original features into a smaller set of features. PCA chooses the axes with the most variance to construct these principal components. Each of the resulting principal components is uncorrelated with and orthogonal to all the other components. In interpreting images, PCA keeps transformations of the most variable pixels, eliminating the information contained in pixels with very little variance.
 
 PCA works as follows: \todo{maybe math for pcas}
 
@@ -113,18 +113,22 @@ OpenAI Gym \cite{brockman2016openai} offers a set of many standard games on whic
 \end{description}
 
 \begin{figure*}[!ht]
+\centering
 \foreach \imagetype in {original, processed}
 {
-    \subfloat[Sample \imagetype~image of the \cp~game screen. \label{subfig:CartPole_\imagetype}]{%
-        \includegraphics[width=0.32\textwidth]{game_images/CartPole_\imagetype.pdf}
+    \subfloat[Sample \imagetype~image of the \cp~game screen. ]{%
+        \includegraphics[width=0.30\textwidth]{game_images/CartPole_\imagetype.pdf}
+        \label{subfig:CartPole_\imagetype}
     }
     \hfill
-    \subfloat[Sample \imagetype~image of the \ab~game screen. \label{subfig:Acrobot_\imagetype}]{%
-        \includegraphics[width=0.32\textwidth]{game_images/Acrobot_\imagetype.pdf}
+    \subfloat[Sample \imagetype~image of the \ab~game screen. ]{%
+        \includegraphics[width=0.30\textwidth]{game_images/Acrobot_\imagetype.pdf}
+        \label{subfig:Acrobot_\imagetype}
     }
     \hfill
-    \subfloat[Sample PCA image of the \mc~game screen. \label{subfig:MountainCar_\imagetype}]{%
-        \includegraphics[width=0.32\textwidth]{game_images/MountainCar_\imagetype.pdf}
+    \subfloat[Sample \imagetype~image of the \mc~game screen. ]{%
+        \includegraphics[width=0.30\textwidth]{game_images/MountainCar_\imagetype.pdf}
+        \label{subfig:MountainCar_\imagetype}
     }
 }
 \caption{Original and processed images from the three games discussed in this paper. The processed images were created by grayscaling the original images and resizing from $600 \times 400$ pixels to $80 \times 80$ pixels. The resulting feature space is then $\mathbb{R}^{6400}$.}
@@ -159,9 +163,9 @@ In our experiments, we used four different types of models, each of which includ
     
     \item[(D)DQN-PCA] These models use a database of 1000 states as training data for PCA and project the pixel features of new states onto the subspace that captures 99\% of the variance. The results is a one-dimensional vector with varying lengths based on the game (100 to 500 features). This vector is passed into a conventional (not convolutional) deep neural network to predict the Q-value.
     
-    \item[(D)DQCNN-PCA] These models perform PCA as above, but inverts the PCA transformation in order to convert each image back to its original space. The result is again an $80 \times 80$ image, which is then input into a model with the same network structure as the original (D)DQN.
+    \item[(D)DQCNN-PCA] These models perform PCA as in the (D)DQN-PCA model but then invert the PCA transformation in order to convert each image back to its original space. The result is a simplified $80 \times 80$ image, which is then input into a model with the same network structure as the original (D)DQN.
     
-    \item[(D)DQCNN-PCA-Mini] Out of curiosity, we included one additional model, which takes the one-dimensional vector obtained from the PCA transformation and reshapes it into a square (zero padding if necessary). We then convolved the resulting ``image'' through a smaller neural network to predict the Q-value for each state. Although PCA strips correlation between nearby pixels, we were interested in investigating whether the reduced dimensionality preserved some structure between nearby values.
+    \item[(D)DQCNN-PCA-Mini] Out of curiosity, we included one additional model type, which takes the one-dimensional vector obtained from the PCA transformation and reshapes it into a square (zero padding if necessary). We then convolved the resulting ``image'' through a smaller neural network to predict the Q-value for each state. Although PCA strips correlation between nearby pixels, we were interested in investigating whether the reduced dimensionality preserved some structure between nearby values.
 \end{description}
 
 For the (D)DQCNN and (D)DQCNN-PCA models, we kept our network structure similar to \cite{mnih2013playing} and \cite{mnih2015human} by using three hidden layers in each network. These DQNs take in an $80 \times 80$ grayscale image. Each hidden layer in the network convolves the previous layer's output into multiple filters, followed by a batch normalization and a leaky ReLU with $\alpha = 0.001$ to prevent dead nodes. The first layer convolves $8$ $8 \times 8$ filters with stride $4$; the second layer convolves $16$ $4 \times 4$ filters with stride $2$; the final hidden layer convolves $16$ $4 \times 4$ filters, this time with stride $1$. A max pooling with kernel size $2$ is then applied to reduce the dimensionality of the output. The final layer is fully connected and maps linearly to the number of actions available. For instance, since \cp~contains two actions at any time, the output of the neural network contains two nodes. This structure saves time when forwarding through the network, since a single forward pass for a given state $s$ gives $\hat{Q}_\text{network}(s, a)$ for all $a \in \mathcal{A}$. The images can be found in \ref{fig:pca_images}.
@@ -171,18 +175,22 @@ To keep the models relatively similar in size, we kept the number of parameters 
 For the (D)DQCNN-PCA-Mini model, we kept the rough network structure the same as our original models. However, to account for the smaller image size, we reduced the kernel size to 4 and the stride to 1 for all layers.
 
 \begin{figure*}[!ht]
+\centering
 \foreach \pca in {DQCNN-PCA, DQCNN-PCA-Mini}
 {
-    \subfloat[Sample PCA image of the \cp~game screen for the \pca~model. \label{subfig:cartpole_\pca_image}]{%
-        \includegraphics[width=0.32\textwidth]{game_images/CartPole_\pca.pdf}
+    \subfloat[Sample PCA-transformed image of the \cp~game screen for the \pca~model. ]{%
+        \includegraphics[width=0.30\textwidth]{game_images/CartPole_\pca.pdf}
+        \label{subfig:cartpole_\pca_image}
     }
     \hfill
-    \subfloat[Sample PCA image of the \ab~game screen for the \pca~model. \label{subfig:acrobot_\pca_image}]{%
-        \includegraphics[width=0.32\textwidth]{game_images/Acrobot_\pca.pdf}
+    \subfloat[Sample PCA-transformed image of the \ab~game screen for the \pca~model. ]{%
+        \includegraphics[width=0.30\textwidth]{game_images/Acrobot_\pca.pdf}
+        \label{subfig:acrobot_\pca_image}
     }
     \hfill
-    \subfloat[Sample PCA image of the \mc~game screen for the \pca~model. \label{subfig:mountaincar_\pca_image}]{%
-        \includegraphics[width=0.32\textwidth]{game_images/MountainCar_\pca.pdf}
+    \subfloat[Sample PCA-transformed image of the \mc~game screen for the \pca~model. ]{%
+        \includegraphics[width=0.30\textwidth]{game_images/MountainCar_\pca.pdf}
+        \label{subfig:mountaincar_\pca_image}
     }
 }
 \caption{PCA images from the three games discussed in this paper. The PCA images were created by grayscaling the original images, using the features that capture 99\% of the variance, and either inverting the transformation or not. The resulting feature space depends on the PCA reduction amount.}
@@ -200,7 +208,7 @@ We tested many configurations of hyperparameters, varying the following:
     
     \item[Update frequency] The number of distinct action selections between each minibatch update. This value is typically set to $4$. This technique speeds up the training even further, since rendering the environment is far less costly than forwarding through the network. This has been used in other papers \cite{mnih2013playing, mnih2015human, van2016deep}.
     
-    \item[Number of minibatch training steps] The length of time the model should be trained, expressed in terms of the number of minibatch training steps. While state-of-the-art research uses up to 10 million frames, our resources restrict us to values between 10 thousand and 100 thousand.
+    \item[Number of training steps] The length of time the model should be trained, expressed in terms of the number of minibatch training steps. While state-of-the-art research uses up to 10 million frames, our resources restrict us to values between 10 thousand and 100 thousand.
     
     \item[Replay memory size] The maximum number of transitions -- each of which is a $(s, a, r, s')$ tuple -- stored in the replay memory. The replay memory is used to reduce correlation between transitions used in each minibatch update \cite{mnih2013playing, mnih2015human}.
     
@@ -228,7 +236,7 @@ Within our \path{utils/} folder, we implemented several scripts to aid in the da
 \begin{itemize}
     \item \texttt{Logger.py} is a general logging utility for storing statistics in files. 
     \item \texttt{PCA.py} contains a PCA class whose objects can train on inputs of states, return the transformed features, and invert already-transformed features back into the original image space. 
-    \item \texttt{ReplayMemory.py} contains a class that stores and quickly samples transitions for minibatch updates. 
+    \item \texttt{ReplayMemory.py} contains a class whose objects store and quickly sample transitions for minibatch updates. 
     \item \path{get_notes_and_stats.py} parses our raw data into an easy-to-read format, providing summary statistics, hyperparameters, and metadata about each job. 
     \item \path{plot_data.py} plots raw data as well as running means over episodes and training updates. 
     \item \path{save_states.py} runs a random policy for each game, saving a large set of states on which PCA can later be performed. 
@@ -254,12 +262,15 @@ As a baseline, we ran a random policy on each game, with results in Figures \ref
 \foreach \game in {CartPole, Acrobot, MountainCar}
 {
     \begin{figure*}[!ht]
-        \subfloat[Rewards for a random policy in the \texttt{\game}~game. \label{subfig:\game_NoTraining_Random_rewards}]{%
+        \centering
+        \subfloat[Rewards by episode, as well as a rolling mean, for a random policy in the \texttt{\game}~game. ]{%
             \includegraphics[width=0.45\textwidth]{\game/\game_NoTraining_Random_rewards.pdf}
+            \label{subfig:\game_NoTraining_Random_rewards}
         }
         \hfill
-        \subfloat[Durations for a random policy in the \texttt{\game}~game.\label{subfig:\game_NoTraining_Random_duraions}]{%
+        \subfloat[Durations by episode, as well as a rolling mean, for a random policy in the \texttt{\game}~game.]{%
             \includegraphics[width=0.45\textwidth]{\game/\game_NoTraining_Random_durations.pdf}
+            \label{subfig:\game_NoTraining_Random_duraions}
         }
     \caption{Baseline results from the \texttt{\game}~game from OpenAI Gym under a random policy.}
     \label{fig:\game_random}
@@ -312,7 +323,7 @@ In order to establish a solid set of hyperparameters to which PCA variants of DQ
 
 From these results, we already find that our best hyperparameter configurations beat the random baseline. \mc~was rather difficult to learn, as the final policy seems to depend on the random initialization. With sub-optimal hyperparameters, the episodes under a poorly learned policy can extend to tens of thousands of time steps, far more than a random policy. This particular vulnerability to divergence likely occurs because all transitions entered into the replay memory have $r = -1$, creating difficulties in learning. The average episode in \cp~roughly doubles the duration of the random policy, though the performance has significantly high variance in all models, reaching maxima of up to 200 time steps. Finally, \ab~seems to have been learned quite quickly, reaching optimal performance within the 10,000 training steps.
 
-Here, we observe strong performance by DDQN-GSs over DQN-GSs and by using a Huber loss function over an MSE loss. Other optimizers, such as Adam, failed to learn in pre-testing, so we used the RMSProp optimizer (as suggested by \cite{mnih2013playing})\todo{discuss why we used rmsprop?} throughout our experiments. Weight decay yielded mixed results, likely due to the fact that we only allowed the models to run for 10,000 training steps. Additionally, the effectiveness of the learning rate parameters varied significantly with the game; for example, \cp~learns better with a significantly higher learning rate than the other two games. We also saw that annealing the learning rate slightly improved the overall performance of the algorithms, so we decided to keep the annealing for subsequent experiments. In theory, a learning rate annealing should improve the stability of the model after the model has had time to learn a strong policy. Moreover, not displayed in the data is the surprising fact that DQN-GSs with an enabled target update performed significantly worse than DQN-GSs without a target update in that they failed to reach any convergence at all, so we also decided to remove target update functionality for future experiments. With these observations in mind, we proceeded to test another batch of models for a longer period. 
+Here, we observe consistently strong performance by DDQN-GSs over DQN-GSs and by using a Huber loss function over an MSE loss. Other optimizers, such as Adam, failed to learn in pre-testing, so we used the RMSProp optimizer (as suggested by \cite{mnih2013playing})\todo{discuss why we used rmsprop?} throughout our experiments. Weight decay yielded mixed results, likely due to the fact that we only allowed the models to run for 10,000 training steps. Additionally, the effectiveness of the learning rate parameters varied significantly with the game; for example, \cp~learns better with a significantly higher learning rate than the other two games. We also saw that annealing the learning rate slightly improved the overall performance of the algorithms, so we decided to keep the annealing for subsequent experiments. In theory, a learning rate annealing should improve the stability of the model after the model has had time to learn a strong policy. Moreover, not displayed in the data is the surprising fact that DQN-GSs with an enabled target update performed significantly worse than DQN-GSs without a target update in that they failed to reach any convergence at all, so we also decided to remove target update functionality for future experiments. With these observations in mind, we proceeded to test another batch of models for a longer period. 
 
 \subsubsection{Second Grid Search (50,000 Iterations)}
  
@@ -378,14 +389,15 @@ With a strong DDQN-GS model selected as our new baseline, we then began to test 
     \foreach \model in {DDQN-GS, DDQN-PCA, DDQCNN-PCA, DDQCNN-PCA-Mini}
     {
         \begin{figure*}[!ht]
-            \subfloat[Rewards for the \model~model in the \texttt{\game}~game. \label{subfig:\game_\model_EpsilonGreedy_rewards_cpu}]{%
+            \centering
+            \subfloat[Rewards by episode from training the \model~model on the \texttt{\game}~game. \label{subfig:\game_\model_EpsilonGreedy_rewards_cpu}]{%
                 \includegraphics[width=0.45\textwidth]{\game/\game_\model_EpsilonGreedy_rewards_cpu.pdf}
             }
             \hfill
-            \subfloat[Losses for the \model~model in the \texttt{\game}~game. \label{subfig:\game_\model_EpsilonGreedy_losses_cpu}]{%
+            \subfloat[Losses by number of training steps from training the \model~model on the \texttt{\game}~game. \label{subfig:\game_\model_EpsilonGreedy_losses_cpu}]{%
                 \includegraphics[width=0.45\textwidth]{\game/\game_\model_EpsilonGreedy_losses_cpu.pdf}
             }
-            \caption{Rewards and losses for the \model~model in the \texttt{\game}~game.}
+            \caption{Rewards and Huber losses for the \model~model in the \texttt{\game}~game over 100,000 minibatch training steps.}
             \label{fig:\game_\model_rewards_losses}
         \end{figure*}
     }
@@ -443,7 +455,7 @@ Further directions include performing the same PCA analysis for DQN performance 
 
 We had severely limited computational power and time, so extending this work using more varied learning rates and annealing schedules could offer better performance. Also, computing using GPUs (which were unfortunately not available) rather than CPUs would have been a substantial time boost.
 
-Recent developments and additions to DQNs also suggest promising improvements to the general DQN framework as well as the use of PCA in reinforcement learning. For instance, adding Hindsight Experience Replay to \mc~would be a good strategy, since \mc~tends to get stuck in suboptimal policies, and choosing good transitions can significantly improve learning. 
+Recent developments and additions to DQNs also suggest promising improvements to the general DQN framework as well as the use of PCA in reinforcement learning. For instance, adding hindsight experience replay \cite{andrychowicz2017hindsight} or prioritized experience replay \cite{schaul2015prioritized}, particularly to \mc, which is heavily dependent on choosing the right transitions in each minibatch update, would further improve our algorithms' performance and check the robustness of using PCA with slightly different learning algorithms.
 
 \newpage
 \bibliography{final_project}{}
@@ -459,26 +471,32 @@ Recent developments and additions to DQNs also suggest promising improvements to
 \begin{enumerate}
     \item Download/install Anaconda
     
-    \item Clone this paper's GitHub repository: \url{https://github.com/hahakumquat/stat234-project}
+    \item Clone this paper's repository: \url{https://github.com/hahakumquat/stat234-project}
     
-    \item Inside the directory containing the repository, create the \texttt{conda} environment, which consists of all the necessary packages: 
+    \item Inside the directory containing the repository, create and activate the \texttt{conda} environment, which consists of all the necessary packages: 
     
-    \mint{bash}|conda env create -f environment.yml|
+    \begin{minted}{bash}
+    conda env create -f environment.yml
+    source activate stat234
+    \end{minted}
 
     \item Fix errors if unmerged into master OpenAI Gym branch
     
     \begin{itemize}
-        \item Consistent with the pull request at \url{https://github.com/openai/gym/pull/930}, in each of the game files in \path{gym/gym/envs/classic_control/}, add \texttt{dtype=np.float32} to each \texttt{spaces.Box()} initialization to suppress the logger warning
+        \item Consistent with the pull request at \url{https://github.com/openai/gym/pull/972}, in each of the game files in \path{gym/gym/envs/classic_control/}, add \texttt{dtype=np.float32} to each \texttt{spaces.Box()} initialization to suppress the logger warning
     \end{itemize}
     
     \item Run \texttt{main.py}
     
     \begin{itemize}
-        \item \texttt{python main.py -h} for command-line argument help
-        \item \texttt{python main.py -g CartPole-v0 -m DQN\_GS -a EpsilonGreedy -e 1000 --nreplay 10000} for training a normal grayscale DQN
-        \item \texttt{python main.py -g CartPole-v0 -a Random -e 1000 --nreplay 10000} for a random policy
+        \item \texttt{python main.py -h} for command-line argument instructions and a full list of arguments and defaults.
+        \item \texttt{python main.py -g CartPole-v0 -m DQN\_GS -e 1000} for training a normal grayscale DQN on \cp~ for 1000 training steps
+        \item \texttt{python main.py -g Acrobot-v1 -m DDQCNN\_PCA} for training a convolutional PCA variant of a DDQN
+        \item \texttt{python main.py -g CartPole-v0 -a Random -e 1000} for a random policy
     \end{itemize}
 \end{enumerate}
+
+\todo{add additional plots or data to appendix}
 
 
 \end{document}
