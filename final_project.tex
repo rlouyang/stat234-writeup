@@ -13,8 +13,6 @@
 \usepackage[utf8]{inputenc} 
 % \doublespacing
 
-
-
 % \usepackage[nomarkers]{endfloat}
 
 \newcommand{\cp}{\texttt{CartPole}}
@@ -99,13 +97,29 @@ Current state-of-the-art models \cite{mnih2013playing, mnih2015human} use deep c
 
 Double DQNs (DDQNs) \cite{van2016deep} are very similar to regular DQNs. However, instead of using the same network to obtain the target value for minibatch updates as in a regular DQN, the DDQN randomly selects one of two networks to update and uses the other network to obtain the target value.
 
-\todo{maybe math for dqns}
+\todo{put image in}
 
 \subsection{Principal Component Analysis}
 
 Principal component analysis (PCA) is a dimensionality reduction technique that orthogonally projects the original features into a smaller set of features. PCA chooses the axes with the most variance to construct these principal components. Each of the resulting principal components is uncorrelated with and orthogonal to all the other components. In interpreting images, PCA keeps transformations of the most variable pixels, eliminating the information contained in pixels with very little variance.
 
-PCA works as follows: \todo{maybe math for pcas}
+
+We briefly describe how PCA works. Consider a setting where we have $n$ state feature vectors $x \in \mathbb{R}^m$. We construct a feature covariance matrix $\mathbf{S}$ as the following:
+
+$$\sum_{i=1}^n x_i x_i^\top = \mathbf{X}^\top \mathbf{X} = \mathbf{S}$$
+
+We then consider the $d$ largest eigenvalues of $\mathbf{S}$. It has been shown that the corresponding eigenvectors of these eigenvalues encompass the maximum amount of variance in the dataset in the subspace $\mathbb{R}^d$. We then construct a $d \times m$ projection matrix $\mathbf{U}$:
+
+$$\mathbf{U} = (\mathbf{u}_1, \ldots, \mathbf{u}_d)^\top$$
+
+For each $\mathbf{x}$, we can then compute the transformed feature vector $\mathbf{z} = \mathbf{U}\mathbf{x}$. These can also be interpreted as the reconstruction coefficients.
+
+To reconstruct a simplified version of the original feature vector, we compute:
+
+$$\hat{\mathbf{x}} = \mathbf{U}^\top \mathbf{z}$$
+
+In our usage, we transform our input images into a feature vector of pixels before performing PCA.
+
 
 \subsection{OpenAI Gym}
 
@@ -328,7 +342,7 @@ In order to establish a solid set of hyperparameters to which PCA variants of DQ
 
 From these results, we already find that our best hyperparameter configurations beat the random baseline. \mc~was rather difficult to learn, as the final policy seems to depend on the random initialization. With sub-optimal hyperparameters, the episodes under a poorly learned policy can extend to tens of thousands of time steps, far more than a random policy. This particular vulnerability to divergence likely occurs because all transitions entered into the replay memory have $r = -1$, creating difficulties in learning. The average episode in \cp~roughly doubles the duration of the random policy, though the performance has significantly high variance in all models, reaching maxima of up to 200 time steps. Finally, \ab~seems to have been learned quite quickly, reaching optimal performance within the 10,000 training steps.
 
-Here, we observe consistently strong performance by DDQN-GSs over DQN-GSs and by using a Huber loss function over an MSE loss. Other optimizers, such as Adam, failed to learn in pre-testing, so we used the RMSProp optimizer (as suggested by \cite{mnih2013playing})\todo{discuss why we used rmsprop?} throughout our experiments. Weight decay yielded mixed results, likely due to the fact that we only allowed the models to run for 10,000 training steps. Additionally, the effectiveness of the learning rate parameters varied significantly with the game; for example, \cp~learns better with a significantly higher learning rate than the other two games. We also saw that annealing the learning rate slightly improved the overall performance of the algorithms, so we decided to keep the annealing for subsequent experiments. In theory, a learning rate annealing should improve the stability of the model after the model has had time to learn a strong policy. Moreover, not displayed in the data is the surprising fact that DQN-GSs with an enabled target update performed significantly worse than DQN-GSs without a target update in that they failed to reach any convergence at all, so we also decided to remove target update functionality for future experiments. With these observations in mind, we proceeded to test another batch of models for a longer period. 
+Here, we observe consistently strong performance by DDQN-GSs over DQN-GSs and by using a Huber loss function over an MSE loss. Other optimizers, such as Adam, failed to learn in pre-testing, so we used the RMSProp optimizer (as suggested by \cite{mnih2013playing}) throughout our experiments. Weight decay yielded mixed results, likely due to the fact that we only allowed the models to run for 10,000 training steps. Additionally, the effectiveness of the learning rate parameters varied significantly with the game; for example, \cp~learns better with a significantly higher learning rate than the other two games. We also saw that annealing the learning rate slightly improved the overall performance of the algorithms, so we decided to keep the annealing for subsequent experiments. In theory, a learning rate annealing should improve the stability of the model after the model has had time to learn a strong policy. Moreover, not displayed in the data is the surprising fact that DQN-GSs with an enabled target update performed significantly worse than DQN-GSs without a target update in that they failed to reach any convergence at all, so we also decided to remove target update functionality for future experiments. With these observations in mind, we proceeded to test another batch of models for a longer period. 
 
 \subsubsection{Second Grid Search (50,000 Iterations)}
  
@@ -500,8 +514,6 @@ Recent developments and additions to DQNs also suggest promising improvements to
         \item \texttt{python main.py -g CartPole-v0 -a Random -e 1000} for a random policy
     \end{itemize}
 \end{enumerate}
-
-\todo{add additional plots or data to appendix}
 
 
 \end{document}
