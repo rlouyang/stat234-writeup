@@ -33,6 +33,7 @@
 \begin{abstract}
 Deep convolutional neural networks have become a popular approach to estimating Q-value functions in reinforcement learning problems. These deep Q-networks take in entire images as network inputs, often resulting in large state spaces and long learning times. In this paper, we explore the use of principal component analysis to reduce the state space of network inputs. After testing multiple network configurations, we determine that a reduction in uninformative state features through PCA helps improve the performance of deep reinforcement learning.
 \end{abstract}
+
 \newpage
 \tableofcontents
 
@@ -275,7 +276,7 @@ Although we did have access to a computing cluster, we did not have access to GP
 
 \section{Results}
 
-The full set of raw data, metadata, and plots are available at this \href{https://drive.google.com/drive/folders/15gt9bv0kPBCHnJyW_RzsYQygeMaK1uCf?usp=sharing}{link} (warning: approximately 700 MB). For all our experiments, our primary measure of policy performance was the mean reward over the second half of the episodes, with a rolling mean over the previous 5\% of the total number of episodes providing a similar but smoother representation of model performance.
+The full set of raw data, metadata, and plots are available at this \href{https://github.com/hahakumquat/stat234-project/tree/master/data}{link} (warning: approximately 700 MB). For all our experiments, our primary measure of policy performance was the mean reward over the second half of the episodes, with a rolling mean over the previous 5\% of the total number of episodes providing a similar but smoother representation of model performance.
 
 \subsection{Random Policy}
 
