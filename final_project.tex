@@ -278,6 +278,10 @@ Although we did have access to a computing cluster, we did not have access to GP
 
 The full set of raw data, metadata, and plots are available at this \href{https://github.com/hahakumquat/stat234-project/tree/master/data}{link} (warning: approximately 700 MB). For all our experiments, our primary measure of policy performance was the mean reward over the second half of the episodes, with a rolling mean over the previous 5\% of the total number of episodes providing a similar but smoother representation of model performance.
 
+All summary statistics are taken over the second half of the experiment, after the algorithm has had time to learn the game and converge. This prevents the learning process from affecting measurements of the final learned policy.
+
+Note that these plots are graphed across all of the episodes completed within a constant number of training iterations. Therefore, note that the number of episodes varies depending on the durations of each game. That is, for longer game durations, we have fewer episodes. For the sake of comparison within games, the $y$-axes for the reward graphs are standardized, even if episode rewards are outside the axis limits. In particular, the $y$-axis is clipped to be between 0 and 200 for \cp, $-2000$ and 0 for \ab, and $-5000$ and 0 for \mc. We do this because unclipped axes often create difficulties in detecting patterns in regions with low reward variance. 
+
 \subsection{Random Policy}
 
 As a baseline, we ran a random policy on each game, with results in Figures \ref{fig:CartPole_random}, \ref{fig:Acrobot_random}, and \ref{fig:MountainCar_random}. The average rewards and durations for the three games are available in Table \ref{tab:random_rewards}. With this initial goal in mind, we proceeded to test different model architectures and hyperparameter settings to achieve good empirical results over all three games.
@@ -328,10 +332,6 @@ As a baseline, we ran a random policy on each game, with results in Figures \ref
 \subsection{Hyperparameter Tuning Results}
 
 In our hyperparameter tuning, we decided to keep the frame skip, update frequency, replay memory size, and agent action selection hyperparameters constant for testing, since grid search sizes increase exponentially in the number of parameters, and varying these settings would vastly increase simulation time and space consumption. 
-
-All summary statistics are taken over the second half of the experiment, after the algorithm has had time to learn the game and converge. This prevents the learning process from affecting measurements of the final learned policy.
-
-Note that these plots are graphed across all of the episodes completed within 100,000 training iterations. Note that the number of episodes varies depending on the durations of each game. That is, for longer game durations, we have fewer episodes. The $y$-axis are standardized to be clipped between 0 and 200 for \cp; -2000 and 0 for \ab; and -5000 and 0 for \mc.
 
 \subsubsection{First Grid Search (10,000 Iterations)}
 
