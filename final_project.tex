@@ -331,6 +331,8 @@ In our hyperparameter tuning, we decided to keep the frame skip, update frequenc
 
 All summary statistics are taken over the second half of the experiment, after the algorithm has had time to learn the game and converge. This prevents the learning process from affecting measurements of the final learned policy.
 
+Note that these plots are graphed across all of the episodes completed within 100,000 training iterations. Note that the number of episodes varies depending on the durations of each game. That is, for longer game durations, we have fewer episodes. The $y$-axis are standardized to be clipped between 0 and 200 for \cp; -2000 and 0 for \ab; and -5000 and 0 for \mc.
+
 \subsubsection{First Grid Search (10,000 Iterations)}
 
 In order to establish a solid set of hyperparameters to which PCA variants of DQNs could be compared, we began our experiments with an initial grid search over the hyperparameters of interest for 10,000 training steps to eliminate poorly performing hyperparameter settings. Table \ref{tab:grid_search_v1_10k} contains the results of the top fifteen models for each game ordered by performance.
@@ -405,7 +407,7 @@ The data here indicate mixed results. \mc~tends to do better with larger batch s
 
 \subsection{PCA Networks}
 
-With a strong DDQN-GS model selected as our new baseline, we then began to test the performance of PCA-based models. These model comparison results generalized quite well to other hyperparameter settings. See Figures \ref{fig:CartPole_DDQN-GS_rewards_losses} to \ref{fig:MountainCar_DDQCNN-PCA-Mini_rewards_losses} for a graphical comparison of the PCA networks tested. Table \ref{tab:final_v1_100k} contains the results for the plots. These plots are graphed across all of the episodes completed within 100,000 training iterations. Note that the number of episodes varies depending on the durations of each game. That is, for longer game durations, we have fewer episodes.
+With a strong DDQN-GS model selected as our new baseline, we then began to test the performance of PCA-based models. These model comparison results generalized quite well to other hyperparameter settings. See Figures \ref{fig:CartPole_DDQN-GS_rewards_losses} to \ref{fig:MountainCar_DDQCNN-PCA-Mini_rewards_losses} for a graphical comparison of the PCA networks tested. Table \ref{tab:final_v1_100k} contains the results for the plots. 
 
 \foreach \game in {CartPole, Acrobot, MountainCar}
 {   
