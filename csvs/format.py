@@ -19,7 +19,8 @@ def output(file, keys):
     result = df.sort_values(by=['game', 'mean'], ascending=False).groupby('game').head(15)
     with open(file.split('.')[0] + '.tex', 'w') as f:
         f.write(result.to_latex(index=False, na_rep='N/A'))
-output('model_selection_100k.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'target_update', 'frame_skip', 'processing', 'update_frequency', 'gamma', 'batch_size', 'annealing', 'optimizer', 'loss_function', 'initial_learning_rate', 'weight_decay'])
+
+# output('model_selection_100k.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'target_update', 'frame_skip', 'processing', 'update_frequency', 'gamma', 'batch_size', 'annealing', 'optimizer', 'loss_function', 'initial_learning_rate', 'weight_decay'])
 
 output('model_selection_ddqn_pca_4.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'target_update', 'frame_skip', 'processing', 'update_frequency', 'gamma', 'batch_size', 'annealing', 'optimizer', 'loss_function', 'initial_learning_rate', 'weight_decay'])
 
@@ -31,4 +32,4 @@ output('grid_search_v3_100k.csv', ['key', '25', '50', '75', 'agent', 'n_trains',
 
 output('final_v1_100k.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'target_update', 'frame_skip', 'processing', 'update_frequency', 'gamma', 'batch_size', 'annealing', 'optimizer', 'loss_function', 'layer_sizes', 'initial_learning_rate', 'weight_decay'])
 
-output('dqn_pca_3.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'target_update', 'frame_skip', 'processing', 'update_frequency', 'gamma', 'batch_size', 'annealing', 'optimizer', 'loss_function', 'initial_learning_rate', 'weight_decay'])
+# output('dqn_pca_3.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'target_update', 'frame_skip', 'processing', 'update_frequency', 'gamma', 'batch_size', 'annealing', 'optimizer', 'loss_function', 'initial_learning_rate', 'weight_decay'])
