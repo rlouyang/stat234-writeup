@@ -184,7 +184,7 @@ In our experiments, we used four different types of models, each of which includ
 \begin{description}
     \item[(D)DQCNN] The original model \cite{mnih2013playing, mnih2015human} and variants \cite{van2016deep}. These models convolve images using no extra state-space reduction techniques like PCA. This model is also referred to as (D)DQN-GS, since this is the original grayscale model. We use these two terms interchangeably.
     
-    \item[(D)DQN-PCA] These models use a database of 1000 states as training data for PCA and project the pixel features of new states onto the subspace that captures 99\% of the variance. The results is a one-dimensional vector with varying lengths based on the game (100 to 500 features). This vector is passed into a conventional (not convolutional) deep neural network with varying numbers of layers and nodes to predict the Q-value.
+    \item[(D)DQN-PCA] These models use a database of 1000 states, generated from a random policy, as training data for PCA and project the pixel features of new states onto the subspace that captures at least 99\% of the variance. The results is a one-dimensional vector with varying lengths based on the game (100 to 500 features). This vector is passed into a conventional (not convolutional) deep neural network with varying numbers of layers and nodes to predict the Q-value.
     
     \item[(D)DQCNN-PCA] These models also perform PCA; however, the (D)DQCNN-PCA models then invert the PCA transformation, converting each transformed image back to its original space. The result is a simplified $80 \times 80$ image, which is then input into a model with the same network structure as the original (D)DQN.
     
@@ -281,6 +281,8 @@ The full set of raw data, metadata, and plots are available at this \href{https:
 All summary statistics are taken over the second half of the experiment, after the algorithm has had time to learn the game and converge. This prevents the learning process from affecting measurements of the final learned policy.
 
 Note that these plots are graphed across all of the episodes completed within a constant number of training iterations. Therefore, note that the number of episodes varies depending on the durations of each game. That is, for longer game durations, we have fewer episodes. For the sake of comparison within games, the $y$-axes for the reward graphs are standardized, even if episode rewards are outside the axis limits. In particular, the $y$-axis is clipped to be between 0 and 200 for \cp, $-2000$ and 0 for \ab, and $-5000$ and 0 for \mc. We do this because unclipped axes often create difficulties in detecting patterns in regions with low reward variance. 
+
+One notable yet intentional quirk of our data collection scheme is the fact that each of our trials contains a different number of episodes, even when considering models within the same game. This difference occurs because we seek to keep training time constant between models. For instance, if we were to train models for a constant number of episodes, a poor \mc~model that averages episode durations around 5000 (and thus per-episode rewards around -5000) would be able to use approximately ten times more training time (measured in clock time) than a better \mc~model that averages episode durations around 500 (and thus per-episode rewards around -500). On the other hand, by training models for a constant number of training steps, we ensure that training time as well as the number of minibatch updates is relatively constant between all models. This strategy is consistent with the deep Q-learning literature \cite{mnih2013playing, mnih2015human, van2016deep}, which typically keeps the number of frames played constant.
 
 \subsection{Random Policy}
 
@@ -407,34 +409,29 @@ The data here indicate mixed results. \mc~tends to do better with larger batch s
 
 \subsection{PCA Networks}
 
-With a strong DDQN-GS model selected as our new baseline, we then began to test the performance of PCA-based models. These model comparison results generalized quite well to other hyperparameter settings. See Figures \ref{fig:CartPole_DDQN-GS_rewards_losses} to \ref{fig:MountainCar_DDQCNN-PCA-Mini_rewards_losses} for a graphical comparison of the PCA networks tested. Table \ref{tab:final_v1_100k} contains the results for the plots. 
+With a strong DDQN-GS model selected as our new baseline, we then began to test the performance of PCA-based models. These model comparison results generalized quite well to other hyperparameter settings. See Figures to for a graphical comparison of the PCA networks tested. Table \ref{tab:final_v2_100k} contains the results for the plots. 
 
 \foreach \game in {CartPole, Acrobot, MountainCar}
 {   
-    \foreach \model in {DDQN-GS, DDQN-PCA, DDQCNN-PCA, DDQCNN-PCA-Mini}
-    {
-        \begin{figure*}[!ht]
-            \centering
+    \begin{figure*}[!ht]
+        \centering
+        \foreach \model in {DDQN-GS, DDQN-PCA, DDQCNN-PCA, DDQCNN-PCA-Mini}
+        {
             \subfloat[Rewards by episode from training the \model~model on the \texttt{\game}~game. \label{subfig:\game_\model_EpsilonGreedy_rewards_cpu}]{%
                 \includegraphics[width=0.45\textwidth]{\game/\game_\model_EpsilonGreedy_rewards_cpu.pdf}
             }
             \hfill
-            \subfloat[Losses by number of training steps from training the \model~model on the \texttt{\game}~game. \label{subfig:\game_\model_EpsilonGreedy_losses_cpu}]{%
-                \includegraphics[width=0.45\textwidth]{\game/\game_\model_EpsilonGreedy_losses_cpu.pdf}
-            }
-            \caption{Rewards and Huber losses for the \model~model in the \texttt{\game}~game over 100,000 minibatch training steps.}
-            \label{fig:\game_\model_rewards_losses}
-        \end{figure*}
-    }
+        }
+    \end{figure*}
 }
 
 \begin{table*}[!ht]
     \footnotesize
     \centering
-    \input{csvs/final_v1_100k.tex}
+    \input{csvs/final_v2_100k.tex}
     
     \caption{Model comparison with final hyperparameters over 100,000 training iterations.}
-    \label{tab:final_v1_100k}
+    \label{tab:final_v2_100k}
 \end{table*}
 
 First, we note that the (D)DQN-PCA model, which does not convolve over an image representation, does relatively poorly in all settings. This is reasonable. Since this model does not account for the structural properties of adjacent pixels as a convolutional neural network does, the model loses a significant amount of information about the image. We then turn our attention to the convolutional PCA versions of the models.
@@ -447,18 +444,20 @@ Despite some PCA variants being high performers in each of the games, many of th
 
 \subsection{Testing Layer Sizes}
 
-We wanted to be sure that our DDQN-PCA model's performance was not heavily impacted by the network's architecture. We therefore tested different network architectures for the DDQN-PCA model to see whether there was a significant difference in performance over 100,000 training iterations. See Table \ref{tab:model_selection_ddqn_pca_4} for the results from testing several conventional deep neural network architectures for the DDQN-PCA model.
+We wanted to be sure that our DDQN-PCA model's performance was not heavily impacted by the network's architecture. We therefore tested different network architectures for the DDQN-PCA model to see whether there was a significant difference in performance over 100,000 training iterations. See Table \ref{tab:model_selection_DDQN_PCA_5} for the results from testing several conventional deep neural network architectures for the DDQN-PCA model.
 
 \begin{table*}[!ht]
     \footnotesize
     \centering
-    \input{csvs/model_selection_ddqn_pca_4.tex}
+    \input{csvs/model_selection_DDQN_PCA_5.tex}
     
-    \caption{Results for from testing several conventional deep neural network architectures for the DDQN-PCA model. All experiments used a Huber loss function, learning rate annealing, a batch size of $128$, a learning rate of $0.001$, and a $0.1$ weight decay for 100,000 training iterations.}
-    \label{tab:model_selection_ddqn_pca_4}
+    \caption{Results from testing several conventional deep neural network architectures for the DDQN-PCA model, sorted by reward in descending order. All experiments used a Huber loss function, learning rate annealing, a batch size of $128$, a learning rate of $0.001$, and a $0.1$ weight decay for 100,000 training iterations.}
+    \label{tab:model_selection_DDQN_PCA_5}
 \end{table*}
 
 Unfortunately, despite trying different numbers of layers as well as the number of nodes at each layer, none of the models particularly stood out as a better model than the ones we tried in our final comparison.
+
+\todo{change this because of updated data}
 
 \section{Discussion}
 
