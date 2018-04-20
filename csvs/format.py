@@ -34,4 +34,6 @@ output('grid_search_v3_100k.csv', ['key', '25', '50', '75', 'agent', 'n_trains',
 
 output('final_v1_100k.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'target_update', 'frame_skip', 'processing', 'update_frequency', 'gamma', 'batch_size', 'annealing', 'optimizer', 'loss_function', 'layer_sizes', 'initial_learning_rate', 'weight_decay'])
 
+output('final_v2_100k.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'target_update', 'frame_skip', 'processing', 'update_frequency', 'gamma', 'batch_size', 'annealing', 'optimizer', 'loss_function', 'layer_sizes', 'initial_learning_rate', 'weight_decay'])
+
 # output('dqn_pca_3.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'target_update', 'frame_skip', 'processing', 'update_frequency', 'gamma', 'batch_size', 'annealing', 'optimizer', 'loss_function', 'initial_learning_rate', 'weight_decay'])
