@@ -22,7 +22,9 @@ def output(file, keys):
 
 # output('model_selection_100k.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'target_update', 'frame_skip', 'processing', 'update_frequency', 'gamma', 'batch_size', 'annealing', 'optimizer', 'loss_function', 'initial_learning_rate', 'weight_decay'])
 
-output('model_selection_ddqn_pca_4.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'target_update', 'frame_skip', 'processing', 'update_frequency', 'gamma', 'batch_size', 'annealing', 'optimizer', 'loss_function', 'initial_learning_rate', 'weight_decay'])
+# output('model_selection_ddqn_pca_4.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'target_update', 'frame_skip', 'processing', 'update_frequency', 'gamma', 'batch_size', 'annealing', 'optimizer', 'loss_function', 'initial_learning_rate', 'weight_decay'])
+
+output('model_selection_DDQN_PCA_5.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'target_update', 'frame_skip', 'processing', 'update_frequency', 'gamma', 'batch_size', 'annealing', 'optimizer', 'loss_function', 'initial_learning_rate', 'weight_decay'])
 
 output('grid_search_v1_10k.csv', ['key', '25', '50', '75', 'agent', 'n_trains', 'processing', 'optimizer', 'batch_size', 'gamma', 'frame_skip', 'update_frequency', 'max', 'min'])
 
