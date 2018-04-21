@@ -521,7 +521,14 @@ One thing not discussed in great detail was how we decided upon which parameters
 
 An interesting problem that we encountered while testing different models was that there was little correlation between the loss function and the performance of the model. Indeed, more often than not, the loss function hovered around the same value, typically less than $0.1$, as the simulations ran without ever converging toward an actual minimization. Typically, this indicates that we are underfitting our model, since the model is never able to minimize the loss; however, online discussions claim that this is not a problem in a reinforcement learning setting \cite{stackexchange2017loss}.
 
-To see a less noisy version of the per-episode reward, we also kept track of changes in Q-values as the model trained. We randomly sampled a set of 128 states from the replay memory and determined the average Q-value over all states after each episode. Over time, we expect the sample states' Q-values to increase as the policy improves and the expected future return increases. Indeed, the Q-values for the sample states do tend to increase as the policy learns. Notably, for games with negative rewards (\ab~and \mc), the sample Q-value starts around 0 and decreases sharply at the very beginning of the training before increasing slightly as the policy converges. This is expected and is an artifact of the fact that the model initially does not yet know that typical episodes have negative rewards.
+To see a less noisy version of the per-episode reward, we also kept track of changes in Q-values as the model trained. We randomly sampled a set of 128 states from the replay memory and determined the average Q-value over all states after each episode. Over time, we expect the sample states' Q-values to increase as the policy improves and the expected future return increases. Indeed, the Q-values for the sample states do tend to increase as the policy learns. Notably, for games with negative rewards (\ab~and \mc), the sample Q-value starts around 0 and decreases sharply at the very beginning of the training before increasing slightly as the policy converges. This is expected and is an artifact of the fact that the model initially does not yet know that typical episodes have negative rewards. Additionally, because the sample Q-values are determined using the maximum Q-value over all actions, which tends to be an overestimate, the Q-values tend to be overestimates of the empirical rewards for all games. Additionally, this observation is consistent with the fact that the action is selected using the Q-value for the optimal policy, which tends to be better than the $\epsilon$-greedy policy's occasional random action selection. See Figure \ref{fig:sample_Q} for an example Q-value plot.
+
+\begin{figure*}
+    \centering
+    \includegraphics{}
+    \caption{An example plot of the average optimal Q-value over 128 randomly chosen states. This particular graph is for our best model, a DDQN-PCA with two hidden layers of sizes 128 and 64.}
+    \label{fig:sample_Q}
+\end{figure*}
 
 \section{Conclusion}
 
