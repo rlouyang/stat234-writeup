@@ -184,7 +184,7 @@ In our experiments, we used four different types of models, each of which includ
 \begin{description}
     \item[(D)DQCNN] The original model \cite{mnih2013playing, mnih2015human} and variants \cite{van2016deep}. These models convolve images using no extra state-space reduction techniques like PCA. This model is also referred to as (D)DQN-GS, since this is the original grayscale model. We use these two terms interchangeably.
     
-    \item[(D)DQN-PCA] These models use a database of 1000 states, generated from a random policy, as training data for PCA and project the pixel features of new states onto the subspace that captures at least 99\% of the variance. The results is a one-dimensional vector with varying lengths based on the game (100 to 500 features). This vector is passed into a conventional (not convolutional) deep neural network with varying numbers of layers and nodes to predict the Q-value.
+    \item[(D)DQN-PCA] These models use a database of 1000 states, generated from a random policy, as training data for PCA and project the pixel features of new states onto the subspace that captures at least 99\% of the variance. The results is a one-dimensional vector with varying lengths based on the game (100 to 500 features). This vector is passed into a feed-forward (not convolutional) deep neural network with varying numbers of layers and nodes to predict the Q-value.
     
     \item[(D)DQCNN-PCA] These models also perform PCA; however, the (D)DQCNN-PCA models then invert the PCA transformation, converting each transformed image back to its original space. The result is a simplified $80 \times 80$ image, which is then input into a model with the same network structure as the original (D)DQN.
     
@@ -409,7 +409,7 @@ The data here indicate mixed results. \mc~tends to do better with larger batch s
 
 \subsection{Testing Layer Sizes}
 
-With a strong DDQN-GS model selected as our new baseline, we then began to test the performance of PCA-based models. With \mc~and \ab~being solved problems for several of our neural networks but \cp~failing to ever reach especially large scores, we then focused our efforts on improving \cp. Due to the limited time and resources we had to test various models, we left tuning neural network architectures as our final step, taking the discovered hyperparameters up to this point for granted. We then tested the (D)DQN-PCA on a variety of more complex neural network designs. See Table \ref{tab:model_selection_DDQN_PCA_5} for the results from testing several conventional deep neural network architectures for the DDQN-PCA model over 20,000 training iterations.
+With a strong DDQN-GS model selected as our new baseline, we then began to test the performance of PCA-based models. With \mc~and \ab~being solved problems for several of our neural networks but \cp~failing to ever reach especially large scores, we then focused our efforts on improving \cp. Due to the limited time and resources we had to test various models, we left tuning neural network architectures as our final step, taking the discovered hyperparameters up to this point for granted. We then tested the (D)DQN-PCA on a variety of more complex neural network designs. See Table \ref{tab:model_selection_DDQN_PCA_5} for the results from testing several feed-forward deep neural network architectures for the DDQN-PCA model over 20,000 training iterations.
 
 These findings show a significant increase in the performance of both models, despite losing the structural correlations between pixels. It seems that our initial neural network architecture was ultimately underfitting the images, yielding results limited to the mid-60's for \cp. By adding more weights, (initially 7,000 parameters but now over 20,000), we were able to see strong performances from these previously underperforming models.
 
@@ -420,7 +420,7 @@ With these results, we decided to use a two-layer neural network architecture, c
     \centering
     \input{csvs/model_selection_DDQN_PCA_5.tex}
     
-    \caption{Results from testing several conventional deep neural network architectures for the DDQN-PCA model, sorted by reward in descending order. All experiments used a Huber loss function, learning rate annealing, a batch size of $128$, a learning rate of $0.001$, and a $0.1$ weight decay for 100,000 training iterations.}
+    \caption{Results from testing several feed-forward deep neural network architectures for the DDQN-PCA model, sorted by reward in descending order. All experiments used a Huber loss function, learning rate annealing, a batch size of $128$, a learning rate of $0.001$, and a $0.1$ weight decay for 20,000 training iterations.}
     \label{tab:model_selection_DDQN_PCA_5}
 \end{table*}
 
