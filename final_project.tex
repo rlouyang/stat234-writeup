@@ -3,6 +3,7 @@
 
 \usepackage{silence}
 \WarningFilter{hyphenat}{*******************************}
+\WarningFilter{latex}{Text page }
 
 \usepackage{todonotes}
 \usepackage{microtype}
@@ -249,7 +250,7 @@ We tested many configurations of hyperparameters, varying the following:
     
     \item[Agent action selection] We used an $\epsilon$-greedy agent, annealing $\epsilon$ from $\epsilon_\text{initial} = 1$ to $\epsilon_\text{final} = 0.1$ according to the equation $$\epsilon_t = \epsilon_\text{final} + (\epsilon_\text{initial} - \epsilon_\text{final}) \exp\left(-\frac{t}{\lambda_\epsilon}\right),$$ where $t$ is the number of times the agent has already selected an action, and $\lambda$ is the decay rate. 
     
-    \item[Network Architecture] Toward the end of our experimentation, we had the time to test different network configurations for the (D)DQN-PCA model. Unfortunately, due to the computational demands of performing over images, it was intractable to test larger node structures.
+    \item[Network Architecture] Toward the end of our experimentation, we had the time to test several different network configurations for the (D)DQN-PCA model. Unfortunately, due to the computational demands of performing over images, it was intractable to test larger node structures.
 \end{description}
 
 \subsection{Implementation Details}
@@ -484,13 +485,14 @@ With these results, we chose the best overall neural network architecture, a two
 
 \subsubsection{Further Testing}
 
-With our new DDQN-PCA model, we decided to compare its performance over a longer training time to the original model. Indeed, we see much better performance from our PCA model, even compared to our best previous model, although the at the cost of a much slower convergence
+With our new DDQN-PCA model, we decided to compare its performance over a longer training time to the original model. Indeed, we see much better performance from our PCA model, even compared to our best previous model, although the at the cost of a much slower convergence. Full results are available in Figure \ref{fig:final_v2_100k}.
 
-\foreach \game in {CartPole, Acrobot, MountainCar}
-{   
-    \begin{figure*}[!ht]
-        \centering
-        
+
+\begin{figure*}[!ht]
+    \centering
+    \foreach \game in {CartPole, Acrobot, MountainCar}
+    {   
+    
         \subfloat[Rewards by episode from training the DDQN-GS model on the \texttt{\game} game. \label{subfig:\game_DDQN-GS_EpsilonGreedy_rewards_cpu}]{%
                 \includegraphics[width=0.45\textwidth]{\game/\game_DDQN-GS_EpsilonGreedy_rewards_cpu.pdf}
         }
@@ -498,10 +500,10 @@ With our new DDQN-PCA model, we decided to compare its performance over a longer
         \subfloat[Rewards by episode from training the DDQN-PCA model on the \texttt{\game} game. \label{subfig:\game_DDQN-PCA_EpsilonGreedy_rewards_cpu}]{%
                 \includegraphics[width=0.45\textwidth]{\game/\game_DDQN-PCA_EpsilonGreedy_rewards_cpu.pdf}
         }
-        \caption{Rewards by episode for two DQN variants on the \texttt{\game} game. All trials used the hyperparameters detailed in Figure~\ref{tab:grid_search_hyperparameters}.}
-        \label{fig:\game_final_v2_100k}
-    \end{figure*}
-}
+    }
+    \caption{Rewards by episode for two DQN variants for all three games. All trials used the hyperparameters detailed in Figure~\ref{tab:grid_search_hyperparameters}.}
+    \label{fig:final_v2_100k}
+\end{figure*}
 
 \begin{table*}[!ht]
     \footnotesize
