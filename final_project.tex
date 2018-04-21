@@ -468,10 +468,6 @@ Despite some PCA variants being high performers in each of the games, many of th
 
 Due to limited time and resources, one regret we had was that we were unable to tune network configurations throughout the process. However, after seeing our initial set of results, we had suspicions that the models were underfitting the problems of interest. Seeing that the (D)DQN-PCA models performed surprisingly poorly, we decided to test these models on a variety of more complex feed-forward network architectures used in these models. See Table \ref{tab:model_selection_DDQN_PCA_6} for the results from testing several feed-forward deep neural network architectures for the DDQN-PCA model over 20,000 training iterations.
 
-These findings show a significant increase in the performance of both models, despite losing the structural correlations between pixels. It seems that our initial (D)DQN-PCA neural network architecture was indeed underfitting the images. By adding more weights, (initially 7,000 parameters but now over 20,000), we were able to see strong performances from these previously underperforming models.
-
-With these results, we chose the best overall neural network architecture, a two-layer model containing 128 nodes in the first hidden layer and 64 nodes in the second hidden layer. Comparing its results to the rest of the neural networks, we do find a significant increase in the performance at the cost of a much slower convergence. Note that we were unfortunately unable to try larger network configurations on the convolutional models. Being the case that we were unable to even run the simulations locally, we decided that if the 
-
 \begin{table*}[!ht]
     \footnotesize
     \centering
@@ -481,9 +477,14 @@ With these results, we chose the best overall neural network architecture, a two
     \label{tab:model_selection_DDQN_PCA_6}
 \end{table*}
 
+These findings show a significant increase in the performance of both models, despite losing the structural correlations between pixels. It seems that our initial (D)DQN-PCA neural network architecture was indeed underfitting the images. By adding more weights, (initially 7,000 parameters but now over 20,000), we were able to see strong performances from these previously underperforming models.
+
+With these results, we chose the best overall neural network architecture, a two-layer model containing 128 nodes in the first hidden layer and 64 nodes in the second hidden layer. Comparing its results to the rest of the neural networks, we do find a significant increase in the performance. Note that we were unfortunately unable to try larger network configurations on the convolutional models. Being the case that we were unable to even run many of the simulations locally, we decided that if the simulations could not run on our own machines, they would not be fair agents to play the games anyway.
+
+
 \subsubsection{Further Testing}
 
-With our new DDQN-PCA model, we decided to compare 
+With our new DDQN-PCA model, we decided to compare its performance over a longer training time to the original model. Indeed, we see much better performance from our PCA model, even compared to our best previous model, although the at the cost of a much slower convergence
 
 \foreach \game in {CartPole, Acrobot, MountainCar}
 {   
@@ -497,24 +498,7 @@ With our new DDQN-PCA model, we decided to compare
         \subfloat[Rewards by episode from training the DDQN-PCA model on the \texttt{\game} game. \label{subfig:\game_DDQN-PCA_EpsilonGreedy_rewards_cpu}]{%
                 \includegraphics[width=0.45\textwidth]{\game/\game_DDQN-PCA_EpsilonGreedy_rewards_cpu.pdf}
         }
-        \hfill
-        \subfloat[Rewards by episode from training the DDQCNN-PCA model on the \texttt{\game} game. \label{subfig:\game_DDQCNN-PCA_EpsilonGreedy_rewards_cpu}]{%
-                \includegraphics[width=0.45\textwidth]{\game/\game_DDQCNN-PCA_EpsilonGreedy_rewards_cpu.pdf}
-        }
-        \hfill
-        \subfloat[Rewards by episode from training the DDQCNN-PCA-Mini model on the \texttt{\game} game. \label{subfig:\game_DDQCNN-PCA-Mini_EpsilonGreedy_rewards_cpu}]{%
-                \includegraphics[width=0.45\textwidth]{\game/\game_DDQCNN-PCA-Mini_EpsilonGreedy_rewards_cpu.pdf}
-        }
-            
-        % \foreach \model in {DDQN-GS, DDQN-PCA, DDQCNN-PCA, DDQCNN-PCA-Mini}
-        % {
-        %     \subfloat[Rewards by episode from training the \model~model on the \texttt{\game}~game. \label{subfig:\game_\model_EpsilonGreedy_rewards_cpu}]{%
-        %         \includegraphics[width=0.45\textwidth]{\game/\game_\model_EpsilonGreedy_rewards_cpu.pdf}
-        %     }
-        %     % \hfill
-        % }
-        % \caption{}
-        \caption{Rewards by episode for four DQN variants (including those using PCA) on the \texttt{\game} game. All trials used the hyperparameters detailed in Figure~\ref{tab:grid_search_hyperparameters}.}
+        \caption{Rewards by episode for two DQN variants on the \texttt{\game} game. All trials used the hyperparameters detailed in Figure~\ref{tab:grid_search_hyperparameters}.}
         \label{fig:\game_final_v2_100k}
     \end{figure*}
 }
