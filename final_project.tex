@@ -3,6 +3,7 @@
 
 \usepackage{silence}
 \WarningFilter{hyphenat}{*******************************}
+\WarningFilter{latex}{Text page }
 
 \usepackage{todonotes}
 \usepackage{microtype}
@@ -249,7 +250,7 @@ We tested many configurations of hyperparameters, varying the following:
     
     \item[Agent action selection] We used an $\epsilon$-greedy agent, annealing $\epsilon$ from $\epsilon_\text{initial} = 1$ to $\epsilon_\text{final} = 0.1$ according to the equation $$\epsilon_t = \epsilon_\text{final} + (\epsilon_\text{initial} - \epsilon_\text{final}) \exp\left(-\frac{t}{\lambda_\epsilon}\right),$$ where $t$ is the number of times the agent has already selected an action, and $\lambda$ is the decay rate. 
     
-    \item[Network Architecture] Toward the end of our experimentation, we had the time to test different network configurations for the (D)DQN-PCA model. Unfortunately, due to the computational demands of performing over images, it was intractable to test larger node structures.
+    \item[Network Architecture] Toward the end of our experimentation, we had the time to test several different network configurations for the (D)DQN-PCA model. Unfortunately, due to the computational demands of performing over images, it was intractable to test larger node structures.
 \end{description}
 
 \subsection{Implementation Details}
@@ -484,13 +485,13 @@ With these results, we chose the best overall neural network architecture, a two
 
 \subsubsection{Further Testing}
 
-With our new DDQN-PCA model, we decided to compare its performance over a longer training time to the original model. Indeed, we see much better performance from our PCA model, even compared to our best previous model, although the at the cost of a much slower convergence
+With our new DDQN-PCA model, we decided to compare its performance over a longer training time to the original model. Indeed, we continue to see much better performance from our PCA model, even compared to our best previous model, although at the cost of a much slower convergence. Full results are available in Figure \ref{fig:final_v2_100k} and Table \ref{tab:final_v2_100k}.
 
-\foreach \game in {CartPole, Acrobot, MountainCar}
-{   
-    \begin{figure*}[!ht]
-        \centering
-        
+\begin{figure*}[!ht]
+    \centering
+    \foreach \game in {CartPole, Acrobot, MountainCar}
+    {   
+    
         \subfloat[Rewards by episode from training the DDQN-GS model on the \texttt{\game} game. \label{subfig:\game_DDQN-GS_EpsilonGreedy_rewards_cpu}]{%
                 \includegraphics[width=0.45\textwidth]{\game/\game_DDQN-GS_EpsilonGreedy_rewards_cpu.pdf}
         }
@@ -498,37 +499,39 @@ With our new DDQN-PCA model, we decided to compare its performance over a longer
         \subfloat[Rewards by episode from training the DDQN-PCA model on the \texttt{\game} game. \label{subfig:\game_DDQN-PCA_EpsilonGreedy_rewards_cpu}]{%
                 \includegraphics[width=0.45\textwidth]{\game/\game_DDQN-PCA_EpsilonGreedy_rewards_cpu.pdf}
         }
-        \caption{Rewards by episode for two DQN variants on the \texttt{\game} game. All trials used the hyperparameters detailed in Figure~\ref{tab:grid_search_hyperparameters}.}
-        \label{fig:\game_final_v2_100k}
-    \end{figure*}
-}
+    }
+    \caption{Rewards by episode for two DQN variants for all three games. All trials used the hyperparameters detailed in Figure~\ref{tab:grid_search_hyperparameters}.}
+    \label{fig:final_v2_100k}
+\end{figure*}
 
 \begin{table*}[!ht]
     \footnotesize
     \centering
     \input{csvs/final_v2_100k.tex}
     
-    \caption{Model comparison with final hyperparameters over 100,000 training iterations.}
+    \caption{Comparison between our DDQN-PCA model and the literature's convolutional model using our final hyperparameters (see Table~\ref{tab:grid_search_hyperparameters}) over 100,000 training iterations.}
     \label{tab:final_v2_100k}
 \end{table*}
 
 \section{Discussion}
 
-Throughout this exploratory project, we found that learning to play games from image data alone makes each problem significantly harder. While we had the option to read in metadata about each state such as the pole's angle, the cart's location, or the car's velocity, we decided that the best way to standardize the performance of our model was to ensure that each game fed in only pixels. Note that there are many simulations online that claim to learn better scores for \cp~even just by using pixel data, but these simulations take advantage of knowing the cart locationcropping the whitespace around the cart, drastically improving the performance of the convolution. On the other hand, we sought to learn the games without any prior knowledge whatsoever.
+Throughout this exploratory project, we found that learning to play games from image data alone makes each problem significantly harder. While we had the option to read in metadata about each state such as the pole's angle, the cart's location, or the car's velocity, we decided that the best way to standardize the performance of our model was to ensure that each game fed in only pixels. Note that there are many simulations online that claim to learn better scores for \cp~even just by using pixel data, but these simulations take advantage of knowing the cart location and cropping the whitespace around the cart, drastically improving the performance of the convolution. On the other hand, we sought to learn the games without any prior knowledge whatsoever.
 
-One thing not discussed in great detail was how we decided upon which parameters we chose at every step. In addition to empirical evaluations, we also built generalized linear models on our hyperparameters, treating them as categorical variables and predicting the mean. By examining the coefficients of the model, this gave us a rough estimate of how different features were correlated with the mean reward of each model. The results were consistent with our own observations of the performances of specific hyperparameters.
+One thing not discussed in great detail was how we decided upon which parameters we chose at every step. In addition to empirical evaluations, we also built generalized linear models on our hyperparameters, treating them as categorical variables and regressing on the mean. By examining the coefficients of the model, this gave us a rough estimate of how different features were correlated with the mean reward of each model. The results were consistent with our own observations of the performances of specific hyperparameters.
 
 An interesting problem that we encountered while testing different models was that there was little correlation between the loss function and the performance of the model. Indeed, more often than not, the loss function hovered around the same value, typically less than $0.1$, as the simulations ran without ever converging toward an actual minimization. Typically, this indicates that we are underfitting our model, since the model is never able to minimize the loss; however, online discussions claim that this is not a problem in a reinforcement learning setting \cite{stackexchange2017loss}.
 
-To see a less noisy version of the per-episode reward, we also kept track of changes in Q-values as the model trained. We randomly sampled a set of 128 states from the replay memory and determined the average Q-value over all states after each episode. Over time, we expect the sample states' Q-values to increase as the policy improves, and the expected future return increases. Indeed, the Q-values for the sample states do tend to increase as the policy learns. Notably, for games with negative rewards (\ab~and \mc), the sample Q-value starts around 0 and decreases sharply at the very beginning of the training before increasing slightly. This is expected and is an artifact of the fact that the model initially does not yet know that typical episodes have negative rewards. 
+To see a less noisy version of the per-episode reward, we also kept track of changes in Q-values as the model trained. We randomly sampled a set of 128 states from the replay memory and determined the average Q-value over all states after each episode. Over time, we expect the sample states' Q-values to increase as the policy improves and the expected future return increases. Indeed, the Q-values for the sample states do tend to increase as the policy learns. Notably, for games with negative rewards (\ab~and \mc), the sample Q-value starts around 0 and decreases sharply at the very beginning of the training before increasing slightly as the policy converges. This is expected and is an artifact of the fact that the model initially does not yet know that typical episodes have negative rewards.
 
 \section{Conclusion}
 
-To conclude, we have built up a robust coding framework to test different Q-function models on a variety of discrete-space OpenAI games. The results suggest that compared to the original model, the de-noising and state-space reduction provided by PCA helps PCA-based variants of DQNs perform quite well in several games. However, these variants do not do as well in games with exceptionally long durations and exceptionally sparse rewards. With the right model regularization and network architecture, PCA is a promising way to increase model performance for reinforcement learning by reducing the state space and eliminating the need for DQNs to learn unimportant feature information.
+To conclude, we have built up a robust coding framework to test different Q-function models on a variety of discrete-space OpenAI games. The results suggest that compared to the original model, the de-noising and state-space reduction provided by PCA helps PCA-based variants of DQNs perform quite well in several games. However, these variants do not do as well in games with exceptionally long durations and sparse rewards. With the right model regularization and network architecture, PCA is a promising way to increase model performance for reinforcement learning by reducing the state space and eliminating the need for DQNs to learn unimportant feature information.
 
 \subsection{Further Directions}
 
-Further directions include performing the same PCA analysis for DQN performance on other games, particularly Atari games. Games with large (but discrete) action spaces are also good candidates, since the games used in our experiments had only two or three actions. Additionally, extensions to games with continuous action spaces, which would likely need a significantly different network architecture (such as a convolutional neural network linked with a network in which actions are the inputs), pose an interesting problem for DQNs, whose network structure relies heavily on the presence of a discrete action space.
+The obvious next step would be to test the convolutional models using different and larger network configurations to see whether PCA continues to provide improvements. Given our findings, because CNNs capture structural information, we expect that convolutions will improve enough to do better than the DDQN-PCA model tested at the end of this paper and will be further improved by PCA denoising or dimensionality reduction.
+
+Other promising directions include performing the same PCA analysis for DQN performance on other games, particularly Atari games. Games with large (but discrete) action spaces are also good candidates, since the games used in our experiments had only two or three actions. Additionally, extensions to games with continuous action spaces, which would likely need a significantly different network architecture (such as a convolutional neural network linked with a network in which actions are the inputs), pose an interesting problem for DQNs, whose network structure relies heavily on the presence of a discrete action space.
 
 We had severely limited computational power and time, so extending this work using more varied learning rates and annealing schedules could offer better performance. Also, computing using GPUs (which were unfortunately not available) rather than CPUs would have been a substantial time boost.
 
