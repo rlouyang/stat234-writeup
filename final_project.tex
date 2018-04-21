@@ -411,27 +411,27 @@ The data here indicate mixed results. \mc~tends to do better with larger batch s
 
 \subsection{PCA Networks}
 
-The hyperparameter comparison results generalized quite well to other models, so we continued to use these parameters for . See Figures \ref{fig:CartPole_final_v1_100k}, \ref{fig:Acrobot_final_v1_100k}, and \ref{fig:MountainCar_final_v1_100k} for a graphical comparison of the PCA networks tested. Table \ref{tab:final_v1_100k} contains the full set of results. 
+The hyperparameter comparison results generalized quite well to other models, so we continued to use these parameters for all models in the remaining experiments. With a strong DDQN-GS model selected as our new baseline, we then began to test the performance of PCA-based models. With \mc~and \ab~being solved problems for several of our neural networks but \cp~failing to ever reach particularly large scores, we then focused our efforts on improving \cp. We then ran a set of experiments for 100,000 iterations over all of our models. See Figures \ref{fig:CartPole_final_v1_100k}, \ref{fig:Acrobot_final_v1_100k}, and \ref{fig:MountainCar_final_v1_100k} for a graphical comparison between the double versions of all of the networks of interest. Table \ref{tab:final_v1_100k} contains the full numerical set of results. 
 
 \foreach \game in {CartPole, Acrobot, MountainCar}
 {   
     \begin{figure*}[!ht]
         \centering
         
-        \subfloat[Rewards by episode from training the DDQN-GS model on the \texttt{\game} game. \label{subfig:\game_DDQN-GS_EpsilonGreedy_rewards_cpu}]{%
-                \includegraphics[width=0.45\textwidth]{\game/\game_DDQN-GS_EpsilonGreedy_rewards_cpu.pdf}
+        \subfloat[Rewards by episode from training the DDQN-GS model on the \texttt{\game} game. \label{subfig:final_v1_100k_plots_\game_DDQN-GS_EpsilonGreedy_rewards_cpu}]{%
+                \includegraphics[width=0.45\textwidth]{final_v1_100k_plots/\game_DDQN-GS_EpsilonGreedy_rewards_cpu.pdf}
         }
         \hfill
-        \subfloat[Rewards by episode from training the DDQN-PCA model on the \texttt{\game} game. \label{subfig:\game_DDQN-PCA_EpsilonGreedy_rewards_cpu}]{%
-                \includegraphics[width=0.45\textwidth]{\game/\game_DDQN-PCA_EpsilonGreedy_rewards_cpu.pdf}
+        \subfloat[Rewards by episode from training the DDQN-PCA model on the \texttt{\game} game. \label{subfig:final_v1_100k_plots_\game_DDQN-PCA_EpsilonGreedy_rewards_cpu}]{%
+                \includegraphics[width=0.45\textwidth]{final_v1_100k_plots/\game_DDQN-PCA_EpsilonGreedy_rewards_cpu.pdf}
         }
         \hfill
-        \subfloat[Rewards by episode from training the DDQCNN-PCA model on the \texttt{\game} game. \label{subfig:\game_DDQCNN-PCA_EpsilonGreedy_rewards_cpu}]{%
-                \includegraphics[width=0.45\textwidth]{\game/\game_DDQCNN-PCA_EpsilonGreedy_rewards_cpu.pdf}
+        \subfloat[Rewards by episode from training the DDQCNN-PCA model on the \texttt{\game} game. \label{subfig:final_v1_100k_plots_\game_DDQCNN-PCA_EpsilonGreedy_rewards_cpu}]{%
+                \includegraphics[width=0.45\textwidth]{final_v1_100k_plots/\game_DDQCNN-PCA_EpsilonGreedy_rewards_cpu.pdf}
         }
         \hfill
-        \subfloat[Rewards by episode from training the DDQCNN-PCA-Mini model on the \texttt{\game} game. \label{subfig:\game_DDQCNN-PCA-Mini_EpsilonGreedy_rewards_cpu}]{%
-                \includegraphics[width=0.45\textwidth]{\game/\game_DDQCNN-PCA-Mini_EpsilonGreedy_rewards_cpu.pdf}
+        \subfloat[Rewards by episode from training the DDQCNN-PCA-Mini model on the \texttt{\game} game. \label{subfig:final_v1_100k_plots_\game_DDQCNN-PCA-Mini_EpsilonGreedy_rewards_cpu}]{%
+                \includegraphics[width=0.45\textwidth]{final_v1_100k_plots/\game_DDQCNN-PCA-Mini_EpsilonGreedy_rewards_cpu.pdf}
         }
             
         % \foreach \model in {DDQN-GS, DDQN-PCA, DDQCNN-PCA, DDQCNN-PCA-Mini}
@@ -456,19 +456,21 @@ The hyperparameter comparison results generalized quite well to other models, so
     \label{tab:final_v1_100k}
 \end{table*}
 
-First, we note that the (D)DQN-PCA model, which does not convolve over an image representation, does relatively poorly in all settings. This is not surprising, since this model does not account for the structural properties of adjacent pixels as a convolutional neural network does, the model loses a significant amount of information about the image. It was possible that the neural network architecture selected for these models were underfitting the data, so we later decided to consider increasing the network complexity. For now, we turn our attention to the convolutional PCA versions of the models.
+First, we note that the (D)DQN-PCA model, which does not convolve over an image representation, does relatively poorly in all settings. This is surprising; despite the fact that this model does not account for the structural properties of adjacent pixels as a convolutional neural network does, the model performs only slightly better than random. This became a sign that the neural network architecture selected for these models were underfitting the data. For now, we turn our attention to the convolutional PCA versions of the models.
 
-The DDQN-PCA model performed the best for all three games, outperforming even the convolutional models and generating some of the best scores and most stable means we ever saw in our experiments. One possible reason for the superior performance is the fact that PCA simplifies the images, thereby reducing noise and allowing for more efficient learning. Unfortunately, these results were not replicated in the \mc~game, failing to beat even the random baseline. It seems that \mc~is sensitive to weight initialization, causing unpredictable fluctuations in its performance.
+The DDQCNN-PCA model performed well for \cp~and \ab, outperforming even the convolutional models and generating some of the best scores and most stable means we ever saw in our experiments. One possible reason for the superior performance is the fact that PCA simplifies the images, thereby reducing noise and allowing for more efficient learning. Unfortunately, these results were not replicated in the \mc~game, failing to beat even the random baseline. It seems that \mc~is sensitive to weight initialization, causing unpredictable fluctuations in its performance.
 
-Despite some PCA variants being high performers in each of the games, many of the remaining PCA models were unable to perform above a random baseline, particularly those not using convolutional neural networks. Upon closer inspection of the reward graphs, we find that several PCA models reached a strong optimum around the middle of the training process, but ended up diverging over time. Overall, we find that PCA is sensitive to divergence for bad parameter settings, but less so than the original model; additionally, under the right use cases, the right learning rate annealing, and $\epsilon$ decay, PCA is a promising method to increase the performance of a Q-network under short learning time settings.
+What is more surprising is the performance of DDQCNN-PCA-Mini model, which was a strong performer in the \mc~setting. We had no expectations that this model would do well. After all, the PCA simply selects the most variable features in the projected subspace and are \textit{ad hoc} formed into a square image over which to convolve without maintaining the structural integrity of the original image. It may be that the projection yielded features in the reduced space that had high correlation between one another and thus high predictive power, which the DQN was able to detect; another possibility is the fact that the orthogonal projection preserved some structural information. Otherwise, we have little explanation for the model's performance and mention it only as a point of interest for future work. 
+
+Despite some PCA variants being high performers in each of the games, many of the remaining PCA models were unable to perform above a random baseline, particularly those not using convolutional neural networks. Upon closer inspection of the reward graphs, we find that several PCA models reached a strong optimum around the middle of the training process but ended up diverging over time. Overall, we find that PCA is sensitive to divergence for bad parameter settings, but less so than the original model; additionally, under the right use cases, the right learning rate annealing, and $\epsilon$ decay, PCA is a promising method to increase the performance of a Q-network under short learning time settings.
 
 \subsubsection{Testing Layer Sizes}
 
-With a strong DDQN-GS model selected as our new baseline, we then began to test the performance of PCA-based models. With \mc~and \ab~being solved problems for several of our neural networks but \cp~failing to ever reach particularly large scores, we then focused our efforts on improving \cp. Due to limited time and resources, we had to test various models, we left tuning neural network architectures as our final step, taking the discovered hyperparameters up to this point for granted. We then tested the (D)DQN-PCA on a variety of more complex neural network designs. See Table \ref{tab:model_selection_DDQN_PCA_6} for the results from testing several feed-forward deep neural network architectures for the DDQN-PCA model over 20,000 training iterations.
+Due to limited time and resources, one regret we had was that we were unable to tune network configurations throughout the process. However, after seeing our initial set of results, we had suspicions that the models were underfitting the problems of interest. Seeing that the (D)DQN-PCA models performed surprisingly poorly, we decided to test these models on a variety of more complex feed-forward network architectures used in these models. See Table \ref{tab:model_selection_DDQN_PCA_6} for the results from testing several feed-forward deep neural network architectures for the DDQN-PCA model over 20,000 training iterations.
 
-These findings show a significant increase in the performance of both models, despite losing the structural correlations between pixels. It seems that our initial neural network architecture was ultimately underfitting the images, yielding results limited to the mid-60's for \cp. By adding more weights, (initially 7,000 parameters but now over 20,000), we were able to see strong performances from these previously underperforming models.
+These findings show a significant increase in the performance of both models, despite losing the structural correlations between pixels. It seems that our initial (D)DQN-PCA neural network architecture was indeed underfitting the images. By adding more weights, (initially 7,000 parameters but now over 20,000), we were able to see strong performances from these previously underperforming models.
 
-With these results, we decided to use a two-layer neural network architecture, containing 128 nodes on the first and 64 nodes on the second.
+With these results, we chose the best overall neural network architecture, a two-layer model containing 128 nodes in the first hidden layer and 64 nodes in the second hidden layer. Comparing its results to the rest of the neural networks, we do find a significant increase in the performance at the cost of a much slower convergence. Note that we were unfortunately unable to try larger network configurations on the convolutional models. Being the case that we were unable to even run the simulations locally, we decided that if the 
 
 \begin{table*}[!ht]
     \footnotesize
@@ -481,7 +483,7 @@ With these results, we decided to use a two-layer neural network architecture, c
 
 \subsubsection{Further Testing}
 
-With our new DDQN-PCA model, we 
+With our new DDQN-PCA model, we decided to compare 
 
 \foreach \game in {CartPole, Acrobot, MountainCar}
 {   
