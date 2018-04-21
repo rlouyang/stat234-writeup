@@ -485,8 +485,7 @@ With these results, we chose the best overall neural network architecture, a two
 
 \subsubsection{Further Testing}
 
-With our new DDQN-PCA model, we decided to compare its performance over a longer training time to the original model. Indeed, we see much better performance from our PCA model, even compared to our best previous model, although the at the cost of a much slower convergence. Full results are available in Figure \ref{fig:final_v2_100k}.
-
+With our new DDQN-PCA model, we decided to compare its performance over a longer training time to the original model. Indeed, we continue to see much better performance from our PCA model, even compared to our best previous model, although at the cost of a much slower convergence. Full results are available in Figure \ref{fig:final_v2_100k} and Table \ref{tab:final_v2_100k}.
 
 \begin{figure*}[!ht]
     \centering
@@ -510,19 +509,21 @@ With our new DDQN-PCA model, we decided to compare its performance over a longer
     \centering
     \input{csvs/final_v2_100k.tex}
     
-    \caption{Model comparison with final hyperparameters over 100,000 training iterations.}
+    \caption{Comparison between our DDQN-PCA model and the literature's convolutional model using our final hyperparameters (see Table~\ref{tab:grid_search_hyperparameters}) over 100,000 training iterations.}
     \label{tab:final_v2_100k}
 \end{table*}
 
 \section{Discussion}
 
-Throughout this exploratory project, we found that learning to play games from image data alone makes each problem significantly harder. While we had the option to read in metadata about each state such as the pole's angle, the cart's location, or the car's velocity, we decided that the best way to standardize the performance of our model was to ensure that each game fed in only pixels. Note that there are many simulations online that claim to learn better scores for \cp~even just by using pixel data, but these simulations take advantage of knowing the cart locationcropping the whitespace around the cart, drastically improving the performance of the convolution. On the other hand, we sought to learn the games without any prior knowledge whatsoever.
+Throughout this exploratory project, we found that learning to play games from image data alone makes each problem significantly harder. While we had the option to read in metadata about each state such as the pole's angle, the cart's location, or the car's velocity, we decided that the best way to standardize the performance of our model was to ensure that each game fed in only pixels. Note that there are many simulations online that claim to learn better scores for \cp~even just by using pixel data, but these simulations take advantage of knowing the cart location and cropping the whitespace around the cart, drastically improving the performance of the convolution. On the other hand, we sought to learn the games without any prior knowledge whatsoever.
 
-One thing not discussed in great detail was how we decided upon which parameters we chose at every step. In addition to empirical evaluations, we also built generalized linear models on our hyperparameters, treating them as categorical variables and predicting the mean. By examining the coefficients of the model, this gave us a rough estimate of how different features were correlated with the mean reward of each model. The results were consistent with our own observations of the performances of specific hyperparameters.
+One thing not discussed in great detail was how we decided upon which parameters we chose at every step. In addition to empirical evaluations, we also built generalized linear models on our hyperparameters, treating them as categorical variables and regressing on the mean. By examining the coefficients of the model, this gave us a rough estimate of how different features were correlated with the mean reward of each model. The results were consistent with our own observations of the performances of specific hyperparameters.
 
 An interesting problem that we encountered while testing different models was that there was little correlation between the loss function and the performance of the model. Indeed, more often than not, the loss function hovered around the same value, typically less than $0.1$, as the simulations ran without ever converging toward an actual minimization. Typically, this indicates that we are underfitting our model, since the model is never able to minimize the loss; however, online discussions claim that this is not a problem in a reinforcement learning setting \cite{stackexchange2017loss}.
 
-To see a less noisy version of the per-episode reward, we also kept track of changes in Q-values as the model trained. We randomly sampled a set of 128 states from the replay memory and determined the average Q-value over all states after each episode. Over time, we expect the sample states' Q-values to increase as the policy improves, and the expected future return increases. Indeed, the Q-values for the sample states do tend to increase as the policy learns. Notably, for games with negative rewards (\ab~and \mc), the sample Q-value starts around 0 and decreases sharply at the very beginning of the training before increasing slightly. This is expected and is an artifact of the fact that the model initially does not yet know that typical episodes have negative rewards. 
+To see a less noisy version of the per-episode reward, we also kept track of changes in Q-values as the model trained. We randomly sampled a set of 128 states from the replay memory and determined the average Q-value over all states after each episode. Over time, we expect the sample states' Q-values to increase as the policy improves and the expected future return increases. Indeed, the Q-values for the sample states do tend to increase as the policy learns. Notably, for games with negative rewards (\ab~and \mc), the sample Q-value starts around 0 and decreases sharply at the very beginning of the training before increasing slightly as the policy converges. This is expected and is an artifact of the fact that the model initially does not yet know that typical episodes have negative rewards.
+
+Finally, the obvious next step would be to test the convolutional models using different network configurations and the suggested parameters to see if PCA continues to provide improvements. We expect that convolutions ought to do better since they capture structural information, and furthermore do better 
 
 \section{Conclusion}
 
