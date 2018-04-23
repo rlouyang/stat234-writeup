@@ -32,7 +32,7 @@
 \maketitle
 
 \begin{abstract}
-Deep convolutional neural networks have become a popular approach to estimating Q-value functions in reinforcement learning problems. These deep Q-networks take in entire images as network inputs, often resulting in large state spaces and long learning times. In this paper, we explore the use of principal component analysis to reduce the state space of network inputs for small network sizes. After testing multiple network configurations, we determine that a reduction in uninformative state features through PCA helps improve the performance of deep reinforcement learning for small neural network architectures.
+Deep convolutional neural networks have become a popular approach to estimating Q-value functions in reinforcement learning problems. These deep Q-networks take in entire images as network inputs, often resulting in large state spaces and long learning times. In this paper, we explore the use of principal component analysis to reduce the state space of image inputs for small network sizes. After testing multiple network configurations, we determine that a reduction in uninformative state features through PCA helps improve the performance of deep reinforcement learning for small neural network architectures.
 \end{abstract}
 
 \newpage
@@ -93,9 +93,9 @@ framework. Define an MDP to be a tuple consisting of the following elements:
 
 We now briefly discuss the application of deep neural networks to reinforcement learning. The most common use of deep neural networks is to model the Q-function. These deep Q-networks (DQNs) take in a transformed image input $s$, passes it through multiple layers, and returns a vector consisting of the estimated $Q(s, a)$ for all available actions $a \in \mathcal{A}$. 
 
-Current state-of-the-art models \cite{mnih2013playing, mnih2015human} use deep convolutional neural networks (CNNs) as models for the Q-function; these DQNs capitalize on the structure of image data -- for example, correlations between nearby pixels -- to make Q estimates. Unfortunately, DQNs typically require a large number of parameters, thus consuming large amounts of computational resources, in terms of both time and space. In our application, due to computational constraints, we restrict our network architectures to contain about 7000 parameters and briefly explore larger parameter spaces toward the end of the paper. More information about the structure of CNNs is available in Figure \ref{fig:cnn}.
+Current state-of-the-art models \cite{mnih2013playing, mnih2015human} use deep convolutional neural networks (CNNs) as models for the Q-function; these DQNs capitalize on the structure of image data -- for example, correlations between nearby pixels -- to make Q estimates. Unfortunately, DQNs typically require a large number of parameters, thus consuming large amounts of computational resources, in terms of both time and space. In our application, due to computational constraints, we restrict our network architectures to contain about 7000 parameters and briefly explore larger parameter spaces toward the end of the paper. More information about the structure of CNNs is available in Figure~\ref{fig:cnn}.
 
-Double DQNs (DDQNs) \cite{van2016deep} are very similar to regular DQNs. However, instead of using the same network to obtain the target value for minibatch updates as in a regular DQN, the DDQN randomly selects one of two networks to update and uses the other network to obtain the target value.
+Double DQNs (DDQNs) \cite{van2016deep} are very similar to regular DQNs. However, instead of using the same network to obtain the target value for minibatch updates as in a regular DQN, a DDQN randomly selects one of two networks to update and uses the other network to obtain the target value.
 
 \begin{figure*}
     \centering
@@ -107,7 +107,6 @@ Double DQNs (DDQNs) \cite{van2016deep} are very similar to regular DQNs. However
 \subsection{Principal Component Analysis}
 
 Principal component analysis (PCA) is a dimensionality reduction technique that orthogonally projects the original features into a smaller set of features. PCA chooses the axes with the most variance to construct these principal components. Each of the resulting principal components is uncorrelated with and orthogonal to all the other components. In interpreting images, PCA keeps transformations of the most variable pixels, eliminating the information contained in pixels with very little variance.
-
 
 We briefly describe how PCA works. Consider a setting where we have $n$ state feature vectors $x \in \mathbb{R}^m$. We construct a feature covariance matrix $\mathbf{S}$ as the following:
 
@@ -128,7 +127,7 @@ In our usage, we transform our input images into a feature vector of pixels befo
 
 \subsection{OpenAI Gym}
 
-OpenAI Gym \cite{brockman2016openai} offers a set of many standard games on which to test reinforcement learning algorithms. We tested our algorithms, which learn on pixel images, on the following games. See Figure \ref{fig:game_images} for sample images of each game.
+OpenAI Gym \cite{brockman2016openai} offers a set of many standard games on which to test reinforcement learning algorithms. We tested our algorithms, which learn on pixel images, on the following games. See Figure~\ref{fig:game_images} for sample images of each game.
 
 \begin{description}
     \item[\href{https://gym.openai.com/envs/CartPole-v0/}{CartPole-v0}] \cp~is the classic reinforcement learning environment. At every time step, the agent receives a reward of $1$ and chooses to push the cart either right or left. The game ends when the pole falls to an angle greater than 15 degrees from vertical or when the cart moves off the screen. 
@@ -161,7 +160,7 @@ OpenAI Gym \cite{brockman2016openai} offers a set of many standard games on whic
 
 \subsection{PyTorch}
 
-PyTorch \cite{paszke2017pytorch} is a Python framework for constructing neural network architectures. Although PyTorch is still in its early stages of development, it has several advantages compared to other neural network libraries such as TensorFlow and Keras. Namely, improvements include a clean extension of the common Python package \texttt{NumPy}, deep integration with Python, and efficient memory usage. 
+PyTorch \cite{paszke2017pytorch} is a Python framework for constructing neural network architectures. The language is relatively new and has little online support, so learning the language was a significant part of the project goal. Although PyTorch is still in its early stages of development, it has several advantages compared to other neural network libraries such as TensorFlow and Keras. Namely, improvements include a clean extension of the common Python package \texttt{NumPy}, deep integration with Python, and efficient memory usage. 
 
 \section{Methods}
 
@@ -169,7 +168,7 @@ PyTorch \cite{paszke2017pytorch} is a Python framework for constructing neural n
 
 We replicated the original deep Q-network papers \cite{mnih2013playing, mnih2015human} in Python, using PyTorch \cite{paszke2017pytorch} for the neural network architecture and OpenAI Gym \cite{brockman2016openai} to test and compare our algorithms on different games. 
 
-There are quite a few steps to get started to replicate our procedure, including changing some of the source code in OpenAI Gym. For the sake of brevity, these instructions are included in Appendix \ref{app:getting_started}. To run our experiments, we used a limited partition of an Odyssey research computing cluster to run a portion of our computationally intensive jobs.
+There are quite a few steps to get started to replicate our procedure, including changing some of the source code in OpenAI Gym. For the sake of brevity, these instructions are included in Appendix~\ref{app:getting_started}. To run our experiments, we used a limited partition of an Odyssey research computing cluster to run a portion of our computationally intensive jobs.
 
 \subsection{Image Preprocessing}
 
@@ -180,19 +179,19 @@ At each time step, we obtained the RGB (color) mapping of the game screen, resiz
 \subsection{Model Structures}
 \label{subsec:model_structure}
 
-In our experiments, we used four different types of models, each of which includes the original and double network variants: 
+In our experiments, we used four different types of models, each of which includes the original (e.g. DQN) and double (e.g. DDQN) network variants: 
 
 \begin{description}
     \item[(D)DQCNN] The original model \cite{mnih2013playing, mnih2015human} and variants \cite{van2016deep}. These models convolve images using no extra state-space reduction techniques like PCA. This model is also referred to as (D)DQN-GS, since this is the original grayscale model. We use these two terms interchangeably.
     
-    \item[(D)DQN-PCA] These models use a database of 1000 states, generated from a random policy, as training data for PCA and project the pixel features of new states onto the subspace that captures at least 99\% of the variance. The results is a one-dimensional vector with varying lengths based on the game (100 to 500 features). This vector is passed into a feed-forward (not convolutional) deep neural network with varying numbers of layers and nodes to predict the Q-value.
+    \item[(D)DQN-PCA] These models use a database of 1000 states, generated from a random policy, as training data for PCA and project the pixel features of new states onto the subspace that captures at least 99\% of the variance. The result for each state is a one-dimensional vector with varying lengths based on the game (100 to 500 features). This vector is passed into a feed-forward (not convolutional) deep neural network with varying numbers of layers and nodes to predict the Q-value.
     
     \item[(D)DQCNN-PCA] These models also perform PCA; however, the (D)DQCNN-PCA models then invert the PCA transformation, converting each transformed image back to its original space. The result is a simplified $80 \times 80$ image, which is then input into a model with the same network structure as the original (D)DQN.
     
     \item[(D)DQCNN-PCA-Mini] Out of curiosity, we included one additional model type, which takes the one-dimensional vector obtained from the PCA transformation and reshapes it into a square (zero padding if necessary). We then convolved the resulting ``image'' through a smaller neural network to predict the Q-value for each state. Although PCA strips correlation between nearby pixels, we were interested in investigating whether the reduced dimensionality preserved some structure between nearby values.
 \end{description}
 
-For the (D)DQCNN and (D)DQCNN-PCA models, we kept our network structure similar but reduced in parameter size to \cite{mnih2013playing} and \cite{mnih2015human} by using three hidden layers in each network. These DQNs take in an $80 \times 80$ grayscale image. Each hidden layer in the network convolves the previous layer's output into multiple filters, followed by a batch normalization and a leaky ReLU with $\alpha = 0.001$ to prevent dead nodes. The first layer convolves $8$ $8 \times 8$ filters with stride $4$; the second layer convolves $16$ $4 \times 4$ filters with stride $2$; the final hidden layer convolves $16$ $4 \times 4$ filters, this time with stride $1$. A max pooling with kernel size $2$ is then applied to reduce the dimensionality of the output. The final layer is fully connected and maps linearly to the number of actions available. For instance, since \cp~contains two actions at any time, the output of the neural network contains two nodes. This structure saves time when forwarding through the network, since a single forward pass for a given state $s$ gives $\hat{Q}_\text{network}(s, a)$ for all $a \in \mathcal{A}$. The images can be found in \ref{fig:pca_images}.
+For the (D)DQCNN and (D)DQCNN-PCA models, we kept our network structure similar to \cite{mnih2013playing} and \cite{mnih2015human} but reduced the parameter size by using three hidden layers in each network. These DQNs take in an $80 \times 80$ grayscale image. Each hidden layer in the network convolves the previous layer's output into multiple filters, followed by a batch normalization and a leaky ReLU with $\alpha = 0.001$ to prevent dead nodes. The first layer convolves $8$ $8 \times 8$ filters with stride $4$; the second layer convolves $16$ $4 \times 4$ filters with stride $2$; the final hidden layer convolves $16$ $4 \times 4$ filters, this time with stride $1$. A max pooling with kernel size $2$ is then applied to reduce the dimensionality of the output. The final layer is fully connected and maps linearly to the number of actions available. For instance, since \cp~contains two actions at any time, the output of the neural network contains two nodes. This structure saves time when forwarding through the network, since a single forward pass for a given state $s$ gives $\hat{Q}_\text{network}(s, a)$ for all $a \in \mathcal{A}$. The images can be found in Figure~\ref{fig:pca_images}.
 
 To ensure that the models are relatively comparable, we kept the number of parameters for each model as close as possible at around 7,000 parameters. For the (D)DQN-PCA model, we tested a variety of network architectures, varying the number of layers as well as the number of nodes in each layer. 
 
@@ -226,7 +225,7 @@ For the (D)DQCNN-PCA-Mini model, we kept the rough network structure the same as
 We tested many configurations of hyperparameters, varying the following: 
 
 \begin{description}
-    \item[Model] One of the Q-function models mentioned in Section \ref{subsec:model_structure}.
+    \item[Model] One of the Q-function models mentioned in Section~\ref{subsec:model_structure}.
     
     \item[Frame skip] The number of time steps for which the same action is repeated. To speed up learning, we used this method described in \cite{mnih2013playing, mnih2015human}. When an action is selected, that action is repeated for the next $k$ frames, since selecting an action and training takes much more time than rendering an additional step of the game. We chose $k = 3$ since $k = 4$, which was suggested in \cite{mnih2013playing, mnih2015human}, empirically performed worse in \cp. 
     
@@ -281,7 +280,7 @@ Although we did have access to a computing cluster, the access was limited and w
 
 The full set of raw data, metadata, and plots are available at this \href{https://github.com/hahakumquat/stat234-project/tree/master/data}{link} (warning: approximately 600 MB). For all our experiments, our primary measure of policy performance was the mean reward over the second half of the episodes, with a rolling mean over the previous 5\% of the total number of episodes providing a similar but smoother representation of model performance.
 
-All summary statistics are taken over the second half of the experiment, after the algorithm has had time to learn the game and converge. This prevents the learning process from affecting measurements of the final learned policy.
+All summary statistics for each run are taken over the second half of the training iterations, after the algorithm has had time to learn the game and converge. This prevents the learning process from affecting measurements of the final learned policy.
 
 Note that these plots are graphed across all of the episodes completed within a constant number of training iterations. Therefore, note that the number of episodes varies depending on the durations of each game. That is, for longer game durations, we have fewer episodes. For the sake of comparison within games, the $y$-axes for the reward graphs are standardized, even if episode rewards are outside the axis limits. In particular, the $y$-axis is clipped to be between 0 and 200 for \cp, $-2000$ and 0 for \ab, and $-5000$ and 0 for \mc. We do this because unclipped axes often create difficulties in detecting patterns in regions with low reward variance. 
 
@@ -289,7 +288,7 @@ One notable yet intentional quirk of our data collection scheme is the fact that
 
 \subsection{Random Policy}
 
-As a baseline, we ran a random policy on each game, with results in Figures \ref{fig:CartPole_random}, \ref{fig:Acrobot_random}, and \ref{fig:MountainCar_random}. The average rewards and durations for the three games are available in Table \ref{tab:random_rewards}. With this initial goal in mind, we proceeded to test different model architectures and hyperparameter settings to achieve good empirical results over all three games.
+As a baseline, we ran a random policy on each game, with results in Figures \ref{fig:CartPole_random}, \ref{fig:Acrobot_random}, and~\ref{fig:MountainCar_random}. The average rewards and durations for the three games are available in Table~\ref{tab:random_rewards}. With this initial goal in mind, we proceeded to test different model architectures and hyperparameter settings to achieve good empirical results over all three games.
 
 \foreach \game in {CartPole, Acrobot, MountainCar}
 {
@@ -340,7 +339,7 @@ In our hyperparameter tuning, we decided to keep the frame skip, update frequenc
 
 \subsubsection{First Grid Search (10,000 Iterations)}
 
-In order to establish a solid set of hyperparameters to which PCA variants of DQNs could be compared, we began our experiments with an initial grid search over the hyperparameters of interest for 10,000 training steps to eliminate poorly performing hyperparameter settings. Table \ref{tab:grid_search_v1_10k} contains the results of the top fifteen models for each game ordered by performance.
+In order to establish a solid set of hyperparameters to which PCA variants of DQNs could be compared, we began our experiments with an initial grid search over the hyperparameters of interest for 10,000 training steps to eliminate poorly performing hyperparameter settings. Table~\ref{tab:grid_search_v1_10k} contains the results of the top fifteen models for each game ordered by performance.
 
 \begin{table*}[!ht]
     \footnotesize
@@ -357,7 +356,7 @@ Here, we observe consistently strong performance by DDQN-GSs over DQN-GSs and by
 
 \subsubsection{Second Grid Search (50,000 Iterations)}
  
-Setting the optimizer, loss function, and target update to RMSProp, Huber loss, and False, respectively, we performed a second grid search over 50,000 training iterations to tune the learning rate and weight decay. The results can be found in Table \ref{tab:grid_search_v2_50k}.
+Setting the optimizer, loss function, and target update to RMSProp, Huber loss, and False, respectively, we performed a second grid search over 50,000 training iterations to tune the learning rate and weight decay. The results can be found in Table~\ref{tab:grid_search_v2_50k}.
 
 \begin{table*}[!ht]
     \footnotesize
@@ -374,7 +373,7 @@ Again, we see that DDQN-GSs tend to outperform DQN-GSs. The learning rate, howev
 
 \subsubsection{Third Grid Search (100,000 Iterations)}
 
-By this point, we established that DDQNs tended to outperform DQNs, so we then explored hyperparameter configurations that yielded good performance over 100,000 iterations. We then performed a grid search, varying the batch size and learning rate. The results can be found in \ref{tab:grid_search_v3_100k}.
+By this point, we established that DDQNs tended to outperform DQNs, so we then explored hyperparameter configurations that yielded good performance over 100,000 iterations. We then performed a grid search, varying the batch size and learning rate. The results can be found in Table~\ref{tab:grid_search_v3_100k}.
 
 \begin{table*}[!ht]
     \footnotesize
@@ -385,7 +384,7 @@ By this point, we established that DDQNs tended to outperform DQNs, so we then e
     \label{tab:grid_search_v3_100k}
 \end{table*}
 
-The data here indicate mixed results. \mc~tends to do better with larger batch sizes, while \ab~and \cp~do better with a smaller batch size. The learning rates differed from game to game as well. With no significant trends in performance, we opted to use a batch size of 128 to increase learning speed and a learning rate of $0.001$ to prevent divergence. Our final hyperparameters, used in the rest of the paper, are available in Table \ref{tab:grid_search_hyperparameters}.
+The data here indicate mixed results. \mc~tends to do better with larger batch sizes, while \ab~and \cp~do better with a smaller batch size. The learning rates differed from game to game as well. With no significant trends in performance, we opted to use a batch size of 128 to increase learning speed and a learning rate of $0.001$ to prevent divergence. Our final hyperparameters, used in the rest of the paper, are available in Table~\ref{tab:grid_search_hyperparameters}.
 
 \begin{table*}[!ht]
     \footnotesize
@@ -412,7 +411,7 @@ The data here indicate mixed results. \mc~tends to do better with larger batch s
 
 \subsection{PCA Networks}
 
-The hyperparameter comparison results generalized quite well to other models, so we continued to use these parameters for all models in the remaining experiments. With a strong DDQN-GS model selected as our new baseline, we then began to test the performance of PCA-based models. With \mc~and \ab~being solved problems for several of our neural networks but \cp~failing to ever reach particularly large scores, we then focused our efforts on improving \cp. We then ran a set of experiments for 100,000 iterations over all of our models. See Figures \ref{fig:CartPole_final_v1_100k}, \ref{fig:Acrobot_final_v1_100k}, and \ref{fig:MountainCar_final_v1_100k} for a graphical comparison between the double versions of all of the networks of interest. Table \ref{tab:final_v1_100k} contains the full numerical set of results. 
+The hyperparameter comparison results generalized quite well to other models, so we continued to use these parameters for all models in the remaining experiments. With a strong DDQN-GS model selected as our new baseline, we then began to test the performance of PCA-based models. With \mc~and \ab~being solved problems for several of our neural networks but \cp~failing to ever reach particularly large scores, we then focused our efforts on improving \cp. We then ran a set of experiments for 100,000 iterations over all of our models. See Figures \ref{fig:CartPole_final_v1_100k}, \ref{fig:Acrobot_final_v1_100k}, and~\ref{fig:MountainCar_final_v1_100k} for a graphical comparison between the double versions of all of the networks of interest. Table~\ref{tab:final_v1_100k} contains the full numerical set of results. 
 
 \foreach \game in {CartPole, Acrobot, MountainCar}
 {   
@@ -467,7 +466,7 @@ Despite some PCA variants being high performers in each of the games, many of th
 
 \subsubsection{Testing Layer Sizes}
 
-Due to limited time and resources, one regret we had was that we were unable to tune network configurations throughout the process. However, after seeing our initial set of results, we had suspicions that the models were underfitting the problems of interest. Seeing that the (D)DQN-PCA models performed surprisingly poorly, we decided to test these models on a variety of more complex feed-forward network architectures used in these models. See Table \ref{tab:model_selection_DDQN_PCA_6} for the results from testing several feed-forward deep neural network architectures for the DDQN-PCA model over 20,000 training iterations.
+Due to limited time and resources, one regret we had was that we were unable to tune network configurations throughout the process. However, after seeing our initial set of results, we had suspicions that the models were underfitting the problems of interest. Seeing that the (D)DQN-PCA models performed surprisingly poorly, we decided to test these models on a variety of more complex feed-forward network architectures used in these models. See Table~\ref{tab:model_selection_DDQN_PCA_6} for the results from testing several feed-forward deep neural network architectures for the DDQN-PCA model over 20,000 training iterations.
 
 \begin{table*}[!ht]
     \footnotesize
@@ -485,7 +484,7 @@ With these results, we chose the best overall neural network architecture, a two
 
 \subsubsection{Further Testing}
 
-With our new DDQN-PCA model, we decided to compare its performance over a longer training time to the original model. Indeed, we continue to see much better performance from our PCA model, even compared to our best previous model, although at the cost of a much slower convergence. Full results are available in Figure \ref{fig:final_v2_100k} and Table \ref{tab:final_v2_100k}.
+With our new DDQN-PCA model, we decided to compare its performance over a longer training time to the original model. Indeed, we continue to see much better performance from our PCA model, even compared to our best previous model, although at the cost of a much slower convergence. Full results are available in Figure~\ref{fig:final_v2_100k} and Table~\ref{tab:final_v2_100k}.
 
 \begin{figure*}[!ht]
     \centering
@@ -521,14 +520,14 @@ One thing not discussed in great detail was how we decided upon which parameters
 
 An interesting problem that we encountered while testing different models was that there was little correlation between the loss function and the performance of the model. Indeed, more often than not, the loss function hovered around the same value, typically less than $0.1$, as the simulations ran without ever converging toward an actual minimization. Typically, this indicates that we are underfitting our model, since the model is never able to minimize the loss; however, online discussions claim that this is not a problem in a reinforcement learning setting \cite{stackexchange2017loss}.
 
-To see a less noisy version of the per-episode reward, we also kept track of changes in Q-values as the model trained. We randomly sampled a set of 128 states from the replay memory and determined the average Q-value over all states after each episode. Over time, we expect the sample states' Q-values to increase as the policy improves and the expected future return increases. Indeed, the Q-values for the sample states do tend to increase as the policy learns. Notably, for games with negative rewards (\ab~and \mc), the sample Q-value starts around 0 and decreases sharply at the very beginning of the training before increasing slightly as the policy converges. This is expected and is an artifact of the fact that the model initially does not yet know that typical episodes have negative rewards. Additionally, because the sample Q-values are determined using the maximum Q-value over all actions, which tends to be an overestimate, the Q-values tend to be overestimates of the empirical rewards for all games. Additionally, this observation is consistent with the fact that the action is selected using the Q-value for the optimal policy, which tends to be better than the $\epsilon$-greedy policy's occasional random action selection. See Figure \ref{fig:sample_Q} for an example Q-value plot.
+To see a less noisy version of the per-episode reward, we also kept track of changes in Q-values as the model trained. We randomly sampled a set of 128 states from the replay memory and determined the average Q-value over all states after each episode. Over time, we expect the sample states' Q-values to increase as the policy improves and the expected future return increases. Indeed, the Q-values for the sample states do tend to increase as the policy learns. Notably, for games with negative rewards (\ab~and \mc), the sample Q-value starts around 0 and decreases sharply at the very beginning of the training before increasing slightly as the policy converges. This is expected and is an artifact of the fact that the model initially does not yet know that typical episodes have negative rewards. Additionally, because the sample Q-values are determined using the maximum Q-value over all actions, which tends to be an overestimate, the Q-values tend to be overestimates of the empirical rewards for all games. Additionally, this observation is consistent with the fact that the action is selected using the Q-value for the optimal policy, which tends to be better than the $\epsilon$-greedy policy's occasional random action selection. See Figure~\ref{fig:sample_Q} for an example Q-value plot.
 
-\begin{figure*}
+\begin{figure}
     \centering
-    \includegraphics{}
-    \caption{An example plot of the average optimal Q-value over 128 randomly chosen states. This particular graph is for our best model, a DDQN-PCA with two hidden layers of sizes 128 and 64.}
+    \includegraphics[width=0.45\textwidth]{CartPole/CartPole_DDQN-PCA_EpsilonGreedy_sample_Q_cpu.pdf}
+    \caption{An example plot of the average optimal Q-value over 128 randomly chosen states. This particular graph is for our best model, a DDQN-PCA with two hidden layers of sizes 128 and 64, trained for 100,000 minibatch updates. Note the steady increase in average optimal Q-value as the policy improves.}
     \label{fig:sample_Q}
-\end{figure*}
+\end{figure}
 
 \section{Conclusion}
 
